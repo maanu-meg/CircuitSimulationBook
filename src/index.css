@@ -1,0 +1,1622 @@
+@import "tailwindcss";
+
+/* =========================================================
+   BASE
+========================================================= */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #02050b;
+  color: white;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.25);
+  color: white;
+}
+
+
+/* =========================================================
+   ENGINEERING GRID
+========================================================= */
+
+.engineering-grid {
+  background-image:
+    linear-gradient(
+      rgba(96, 165, 250, 0.07) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(96, 165, 250, 0.07) 1px,
+      transparent 1px
+    );
+
+  background-size: 42px 42px;
+
+  mask-image:
+    radial-gradient(
+      ellipse at center,
+      black 0%,
+      rgba(0, 0, 0, 0.75) 45%,
+      transparent 85%
+    );
+
+  -webkit-mask-image:
+    radial-gradient(
+      ellipse at center,
+      black 0%,
+      rgba(0, 0, 0, 0.75) 45%,
+      transparent 85%
+    );
+}
+
+
+/* =========================================================
+   MEG BRAND TEXT
+========================================================= */
+
+.meg-brand-text {
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+}
+
+
+/* =========================================================
+   FILM GRAIN
+========================================================= */
+
+.meg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+
+  background-repeat: repeat;
+}
+
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+::-webkit-scrollbar {
+  width: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #02050b;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.28);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.45);
+}
+
+
+/* =========================================================
+   GENERIC ANIMATIONS
+========================================================= */
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(12deg);
+  }
+
+  50% {
+    transform: translate3d(0, -18px, 0) rotate(15deg);
+  }
+}
+
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.9s ease-out both;
+}
+
+
+/* =========================================================
+   ROTATION
+========================================================= */
+
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 18s linear infinite;
+}
+
+
+@keyframes spinReverse {
+  from {
+    transform: rotate(360deg);
+  }
+
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-spin-reverse {
+  animation: spinReverse 12s linear infinite;
+}
+
+
+/* =========================================================
+   MARQUEE
+========================================================= */
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 32s linear infinite;
+}
+
+
+/* =========================================================
+   PCB TRACE
+========================================================= */
+
+.pcb-line {
+  position: absolute;
+  pointer-events: none;
+  height: 1px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(34, 211, 238, 0.05),
+    rgba(59, 130, 246, 0.8),
+    rgba(34, 211, 238, 0.05),
+    transparent
+  );
+
+  opacity: 0.5;
+}
+
+.pcb-one {
+  width: 420px;
+  left: -80px;
+  top: 35%;
+  transform: rotate(18deg);
+  animation: pcbMoveOne 7s ease-in-out infinite;
+}
+
+.pcb-two {
+  width: 520px;
+  right: -120px;
+  top: 45%;
+  transform: rotate(-24deg);
+  animation: pcbMoveTwo 9s ease-in-out infinite;
+}
+
+.pcb-three {
+  width: 320px;
+  left: 30%;
+  bottom: 18%;
+  transform: rotate(-8deg);
+  animation: pcbMoveThree 6s ease-in-out infinite;
+}
+
+
+@keyframes pcbMoveOne {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: translateX(0) rotate(18deg);
+  }
+
+  50% {
+    opacity: 0.65;
+    transform: translateX(80px) rotate(18deg);
+  }
+}
+
+
+@keyframes pcbMoveTwo {
+  0%,
+  100% {
+    opacity: 0.1;
+    transform: translateX(0) rotate(-24deg);
+  }
+
+  50% {
+    opacity: 0.55;
+    transform: translateX(-100px) rotate(-24deg);
+  }
+}
+
+
+@keyframes pcbMoveThree {
+  0%,
+  100% {
+    opacity: 0.1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+/* Circuit power flow animation */
+
+@keyframes powerFlow {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.power-flow {
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #22c55e,
+    #facc15,
+    transparent
+  );
+  animation: powerFlow 1s linear infinite;
+}
+/* =========================================
+   CIRCUIT POWER ANIMATION
+========================================= */
+
+@keyframes powerFlow {
+  0% {
+    transform: translateX(-150%);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(300%);
+    opacity: 0;
+  }
+}
+
+.power-flow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 45%;
+  height: 100%;
+  border-radius: 999px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #22c55e,
+    #facc15,
+    transparent
+  );
+
+  animation: powerFlow 0.9s linear infinite;
+}
+
+
+/* Small moving electricity particles */
+
+@keyframes powerDot {
+  0% {
+    left: -10%;
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  85% {
+    opacity: 1;
+  }
+
+  100% {
+    left: 110%;
+    opacity: 0;
+  }
+}
+
+.power-dot {
+  position: absolute;
+  top: 50%;
+  left: -10%;
+
+  width: 7px;
+  height: 7px;
+
+  transform: translateY(-50%);
+
+  border-radius: 50%;
+
+  background: #facc15;
+
+  box-shadow:
+    0 0 6px #facc15,
+    0 0 12px #22c55e;
+
+  animation: powerDot 0.7s linear infinite;
+}
+
+
+/* Thinking animation */
+
+@keyframes thinkingAnimation {
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.thinking-animation {
+  animation: thinkingAnimation 2s ease-in-out infinite;
+}
+
+
+/* Joy animation */
+
+@keyframes joyAnimation {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+
+  20% {
+    transform: scale(1.2) rotate(-8deg);
+  }
+
+  40% {
+    transform: scale(1.15) rotate(8deg);
+  }
+
+  60% {
+    transform: scale(1.2) rotate(-5deg);
+  }
+
+  80% {
+    transform: scale(1.1) rotate(5deg);
+  }
+
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.joy-animation {
+  animation: joyAnimation 0.7s ease-in-out infinite;
+}
+
+
+/* Celebration symbols */
+
+@keyframes joyStars {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) translateY(5px);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.1) translateY(-3px);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.8) translateY(-8px);
+  }
+}
+
+.joy-stars {
+  animation: joyStars 1s ease-in-out infinite;
+}
+/* POWER FLOW */
+
+@keyframes powerFlow {
+  0% {
+    transform: translateX(-150%);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(300%);
+    opacity: 0;
+  }
+}
+
+.power-flow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 45%;
+  height: 100%;
+  border-radius: 999px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #22c55e,
+    #facc15,
+    transparent
+  );
+
+  animation: powerFlow 0.8s linear infinite;
+}
+
+
+/* POWER PARTICLE */
+
+@keyframes powerDot {
+  0% {
+    left: -10%;
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  85% {
+    opacity: 1;
+  }
+
+  100% {
+    left: 110%;
+    opacity: 0;
+  }
+}
+
+.power-dot {
+  position: absolute;
+  top: 50%;
+  left: -10%;
+
+  width: 5px;
+  height: 5px;
+
+  transform: translateY(-50%);
+
+  border-radius: 50%;
+
+  background: #facc15;
+
+  box-shadow:
+    0 0 5px #facc15,
+    0 0 9px #22c55e;
+
+  animation: powerDot 0.6s linear infinite;
+}
+
+
+/* THINKING */
+
+@keyframes thinkingAnimation {
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.thinking-animation {
+  animation: thinkingAnimation 2s ease-in-out infinite;
+}
+
+
+/* JOY */
+
+@keyframes joyAnimation {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+
+  25% {
+    transform: scale(1.15) rotate(-8deg);
+  }
+
+  50% {
+    transform: scale(1.2) rotate(8deg);
+  }
+
+  75% {
+    transform: scale(1.15) rotate(-5deg);
+  }
+
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.joy-animation {
+  animation: joyAnimation 0.7s ease-in-out infinite;
+}
+
+
+/* JOY STAR */
+
+@keyframes joyStars {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) translateY(4px);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.1) translateY(-2px);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.8) translateY(-6px);
+  }
+}
+
+.joy-stars {
+  animation: joyStars 1s ease-in-out infinite;
+}
+/* =========================================
+   CIRCUIT BLAST / ENERGY BURST
+========================================= */
+
+.circuit-burst {
+  position: absolute;
+  z-index: 30;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.circuit-burst span {
+  display: inline-block;
+  font-size: 18px;
+  animation: circuitBlast 0.9s ease-out infinite;
+}
+
+/* LEFT SIDE */
+.burst-left {
+  left: 8px;
+  top: 42%;
+  transform: translateY(-50%);
+  flex-direction: column;
+}
+
+.burst-left span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.burst-left span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.burst-left span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.burst-left span:nth-child(4) {
+  animation-delay: 0.45s;
+}
+
+
+/* RIGHT SIDE */
+.burst-right {
+  right: 8px;
+  top: 42%;
+  transform: translateY(-50%);
+  flex-direction: column;
+}
+
+.burst-right span:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.burst-right span:nth-child(2) {
+  animation-delay: 0.25s;
+}
+
+.burst-right span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.burst-right span:nth-child(4) {
+  animation-delay: 0.55s;
+}
+
+
+/* TOP */
+.burst-top {
+  top: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.burst-top span {
+  font-size: 16px;
+}
+
+
+/* BOTTOM */
+.burst-bottom {
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.burst-bottom span {
+  font-size: 16px;
+}
+
+
+/* BLAST MOVEMENT */
+@keyframes circuitBlast {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) translate(0, 0) rotate(0deg);
+  }
+
+  30% {
+    opacity: 1;
+    transform: scale(1.2) translate(0, -4px) rotate(15deg);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1) translate(8px, -8px) rotate(-10deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.4) translate(18px, -16px) rotate(25deg);
+  }
+}
+/* =========================================
+   ANIMATED SCIENCE CHARACTER
+========================================= */
+
+.character-wrap {
+  position: relative;
+  width: 58px;
+  height: 64px;
+}
+
+.character-head {
+  position: absolute;
+  top: 4px;
+  left: 11px;
+  width: 38px;
+  height: 36px;
+  border-radius: 45% 45% 42% 42%;
+  background: #f8c9a0;
+  border: 2px solid #d99b72;
+  z-index: 3;
+}
+
+.character-hair {
+  position: absolute;
+  top: -5px;
+  left: 4px;
+  width: 27px;
+  height: 13px;
+  border-radius: 50% 70% 30% 20%;
+  background: #334155;
+  transform: rotate(-8deg);
+}
+
+.character-eyes {
+  position: absolute;
+  top: 15px;
+  left: 9px;
+  display: flex;
+  gap: 10px;
+}
+
+.character-eye {
+  width: 4px;
+  height: 5px;
+  border-radius: 50%;
+  background: #1e293b;
+}
+
+.character-mouth {
+  position: absolute;
+  left: 14px;
+  top: 25px;
+  width: 10px;
+  height: 5px;
+}
+
+.mouth-thinking {
+  border-top: 2px solid #7c2d12;
+  border-radius: 50%;
+}
+
+.mouth-happy {
+  border-bottom: 2px solid #7c2d12;
+  border-radius: 0 0 10px 10px;
+}
+
+.character-body {
+  position: absolute;
+  left: 14px;
+  bottom: 0;
+  width: 32px;
+  height: 27px;
+  border-radius: 12px 12px 5px 5px;
+  background: #3b82f6;
+  border: 2px solid #2563eb;
+}
+
+.character-collar {
+  position: absolute;
+  top: 4px;
+  left: 10px;
+  width: 9px;
+  height: 12px;
+  background: white;
+  transform: rotate(30deg);
+  border-radius: 3px;
+}
+
+
+/* THINKING HAND */
+
+.character-hand-thinking {
+  position: absolute;
+  right: 1px;
+  top: 31px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f8c9a0;
+  border: 2px solid #d99b72;
+  z-index: 5;
+}
+
+.character-hand {
+  position: absolute;
+  top: -9px;
+  right: 1px;
+  width: 12px;
+  height: 13px;
+  border-radius: 50%;
+  background: #f8c9a0;
+}
+
+
+/* HAPPY ARMS */
+
+.character-arm {
+  position: absolute;
+  top: 34px;
+  width: 9px;
+  height: 25px;
+  border-radius: 999px;
+  background: #3b82f6;
+  z-index: 1;
+}
+
+.character-arm-left-happy {
+  left: 5px;
+  transform: rotate(45deg);
+  transform-origin: top center;
+}
+
+.character-arm-right-happy {
+  right: 4px;
+  transform: rotate(-45deg);
+  transform-origin: top center;
+}
+
+
+/* THINKING */
+
+@keyframes characterThinking {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-3px) rotate(-2deg);
+  }
+
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+.character-thinking {
+  animation: characterThinking 2s ease-in-out infinite;
+}
+
+
+/* HAPPY */
+
+@keyframes characterHappy {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+
+  20% {
+    transform: translateY(-5px) scale(1.08) rotate(-5deg);
+  }
+
+  40% {
+    transform: translateY(0) scale(1.05) rotate(5deg);
+  }
+
+  60% {
+    transform: translateY(-6px) scale(1.1) rotate(-4deg);
+  }
+
+  80% {
+    transform: translateY(0) scale(1.05) rotate(4deg);
+  }
+
+  100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+.character-happy {
+  animation: characterHappy 0.9s ease-in-out infinite;
+}
+
+
+/* THINKING DOTS */
+
+.thinking-dots {
+  position: absolute;
+  top: -10px;
+  right: -18px;
+  display: flex;
+  gap: 3px;
+}
+
+.thinking-dots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #64748b;
+  animation: thinkingDot 1.2s ease-in-out infinite;
+}
+
+.thinking-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.thinking-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes thinkingDot {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+
+/* JOY ICON */
+
+.joy-icon {
+  animation: joyIcon 0.8s ease-in-out infinite;
+}
+
+@keyframes joyIcon {
+  0% {
+    transform: scale(0.8) rotate(0deg);
+  }
+
+  50% {
+    transform: scale(1.25) rotate(15deg);
+  }
+
+  100% {
+    transform: scale(0.8) rotate(0deg);
+  }
+}
+
+
+/* JOY SPARKLES */
+
+.joy-sparkle-1 {
+  animation: sparkleOne 0.9s ease-in-out infinite;
+}
+
+.joy-sparkle-2 {
+  animation: sparkleTwo 0.9s ease-in-out infinite;
+}
+
+@keyframes sparkleOne {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.5) rotate(0deg);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.2) rotate(25deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.7) rotate(45deg);
+  }
+}
+
+@keyframes sparkleTwo {
+  0% {
+    opacity: 0;
+    transform: translateY(3px) scale(0.5) rotate(0deg);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1.25) rotate(-20deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.6) rotate(-40deg);
+  }
+}
+/* =========================================
+   COMPONENT FLOATING ANIMATION
+========================================= */
+
+.component-float {
+  animation: componentFloat 2.8s ease-in-out infinite;
+}
+
+.component-float-delay {
+  animation-delay: 0.35s;
+}
+
+.component-float-delay-2 {
+  animation-delay: 0.7s;
+}
+
+@keyframes componentFloat {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+
+/* =========================================
+   POWER FLOW
+========================================= */
+
+.power-flow {
+  position: absolute;
+  top: 0;
+  left: -30px;
+  width: 30px;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #22c55e,
+    #facc15,
+    transparent
+  );
+  animation: powerFlow 0.8s linear infinite;
+}
+
+.power-dot {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #facc15;
+  box-shadow: 0 0 8px #facc15;
+  transform: translateY(-50%);
+  animation: powerDot 0.8s linear infinite;
+}
+
+@keyframes powerFlow {
+  from {
+    left: -30px;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+
+@keyframes powerDot {
+  from {
+    left: -5px;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+/* =========================================
+   VOLTAGE POWER PASS FLOW
+========================================= */
+
+.voltage-power-flow {
+  position: absolute;
+  top: 0;
+  left: -50px;
+  width: 50px;
+  height: 100%;
+  border-radius: 999px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #22c55e,
+    #facc15,
+    #22c55e,
+    transparent
+  );
+
+  animation-name: voltagePowerFlow;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.voltage-power-dot {
+  position: absolute;
+  top: 50%;
+  left: -8px;
+
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: #facc15;
+
+  box-shadow:
+    0 0 6px #facc15,
+    0 0 12px #facc15;
+
+  transform: translateY(-50%);
+
+  animation-name: voltagePowerDot;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes voltagePowerFlow {
+
+  0% {
+    left: -50px;
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  85% {
+    opacity: 1;
+  }
+
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+
+}
+
+@keyframes voltagePowerDot {
+
+  0% {
+    left: -8px;
+  }
+
+  100% {
+    left: 100%;
+  }
+
+}
+
+
+/* =========================================
+   VOLTAGE SLIDER
+========================================= */
+
+.voltage-slider {
+  height: 7px;
+  appearance: none;
+  border-radius: 999px;
+  background: #cbd5e1;
+  outline: none;
+  cursor: pointer;
+}
+
+.voltage-slider::-webkit-slider-thumb {
+
+  appearance: none;
+
+  width: 20px;
+  height: 20px;
+
+  border-radius: 50%;
+
+  background: #2563eb;
+
+  border: 3px solid white;
+
+  box-shadow:
+    0 2px 8px rgba(37, 99, 235, 0.4);
+
+  cursor: grab;
+}
+
+.voltage-slider::-webkit-slider-thumb:active {
+
+  cursor: grabbing;
+
+  transform: scale(1.1);
+
+}
+
+.voltage-slider::-moz-range-thumb {
+
+  width: 20px;
+  height: 20px;
+
+  border-radius: 50%;
+
+  background: #2563eb;
+
+  border: 3px solid white;
+
+  box-shadow:
+    0 2px 8px rgba(37, 99, 235, 0.4);
+
+  cursor: grab;
+
+}
+/* =========================================
+   TANK POWER FLOW
+========================================= */
+
+.tank-power-flow {
+  position: absolute;
+  top: 0;
+  left: -45px;
+
+  width: 45px;
+  height: 100%;
+
+  border-radius: 999px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #22c55e,
+    #facc15,
+    #22c55e,
+    transparent
+  );
+
+  animation-name: tankPowerFlow;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.tank-power-dot {
+  position: absolute;
+
+  top: 50%;
+  left: -7px;
+
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: #facc15;
+
+  box-shadow:
+    0 0 6px #facc15,
+    0 0 12px #facc15;
+
+  transform: translateY(-50%);
+
+  animation-name: tankPowerDot;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes tankPowerFlow {
+
+  0% {
+    left: -45px;
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  85% {
+    opacity: 1;
+  }
+
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+
+}
+
+@keyframes tankPowerDot {
+
+  0% {
+    left: -7px;
+  }
+
+  100% {
+    left: 100%;
+  }
+
+}
+
+
+/* =========================================
+   TAP SLIDER
+========================================= */
+
+.tank-slider {
+  height: 7px;
+
+  appearance: none;
+
+  border-radius: 999px;
+
+  background: #cbd5e1;
+
+  outline: none;
+
+  cursor: pointer;
+}
+
+.tank-slider::-webkit-slider-thumb {
+
+  appearance: none;
+
+  width: 20px;
+  height: 20px;
+
+  border-radius: 50%;
+
+  background: #2563eb;
+
+  border: 3px solid white;
+
+  box-shadow:
+    0 2px 8px rgba(37, 99, 235, 0.4);
+
+  cursor: grab;
+
+}
+
+.tank-slider::-webkit-slider-thumb:active {
+
+  cursor: grabbing;
+
+  transform: scale(1.1);
+
+}
+
+.tank-slider::-moz-range-thumb {
+
+  width: 20px;
+  height: 20px;
+
+  border-radius: 50%;
+
+  background: #2563eb;
+
+  border: 3px solid white;
+
+  box-shadow:
+    0 2px 8px rgba(37, 99, 235, 0.4);
+
+  cursor: grab;
+
+}
+.circuit-grid {
+  background-image:
+    linear-gradient(#e2e8f0 1px, transparent 1px),
+    linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.component-float {
+  animation: componentFloat 2.8s ease-in-out infinite;
+}
+
+.component-float-delay {
+  animation-delay: 0.35s;
+}
+
+.component-float-delay-2 {
+  animation-delay: 0.7s;
+}
+
+@keyframes componentFloat {
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.current-wire {
+  stroke-dasharray: 12 8;
+  animation: currentFlow 0.6s linear infinite;
+}
+
+@keyframes currentFlow {
+  from {
+    stroke-dashoffset: 40;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.bulb-glow {
+  animation: bulbGlow 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes bulbGlow {
+  from {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+
+  to {
+    filter: brightness(1.55);
+    transform: scale(1.1);
+  }
+}
+
+.joy-character {
+  animation: joyCharacter 0.55s ease-in-out infinite alternate;
+}
+
+@keyframes joyCharacter {
+  from {
+    transform: translateY(2px) rotate(-3deg);
+  }
+
+  to {
+    transform: translateY(-5px) rotate(3deg);
+  }
+}
+
+.confused-character {
+  animation: confusedCharacter 0.4s ease-in-out 2;
+}
+
+@keyframes confusedCharacter {
+  0% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-5px);
+  }
+
+  50% {
+    transform: translateX(5px);
+  }
+
+  75% {
+    transform: translateX(-4px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+/* =========================
+   PHYSICAL BOOK PAGE FLIP
+   ========================= */
+
+.book-container {
+  transform-style: preserve-3d;
+  perspective: 2000px;
+}
+
+/* NEXT → Right page turns forward */
+.book-flip-next {
+  animation: bookFlipNext 700ms ease-in-out;
+}
+
+/* PREV ← Left page turns backward */
+.book-flip-prev {
+  animation: bookFlipPrev 700ms ease-in-out;
+}
+
+@keyframes bookFlipNext {
+  0% {
+    transform: perspective(2000px) rotateY(0deg);
+  }
+
+  35% {
+    transform: perspective(2000px) rotateY(-7deg) scaleX(0.99);
+  }
+
+  55% {
+    transform: perspective(2000px) rotateY(7deg) scaleX(0.99);
+  }
+
+  100% {
+    transform: perspective(2000px) rotateY(0deg);
+  }
+}
+
+@keyframes bookFlipPrev {
+  0% {
+    transform: perspective(2000px) rotateY(0deg);
+  }
+
+  35% {
+    transform: perspective(2000px) rotateY(7deg) scaleX(0.99);
+  }
+
+  55% {
+    transform: perspective(2000px) rotateY(-7deg) scaleX(0.99);
+  }
+
+  100% {
+    transform: perspective(2000px) rotateY(0deg);
+  }
+}
+.real-book {
+  margin: 0 auto;
+}
+
+.real-book .stf__item {
+  background: white;
+}
+
+.real-book .stf__block {
+  background: white;
+}
