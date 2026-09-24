@@ -10,6 +10,8 @@ import CircuitSimulator from "./CircuitSimulator";
 import VoltageCurrentSimulator from "./VoltageCurrentSimulator";
 import CircuitBuilder from "./CircuitBuilder";
 import HTMLFlipBook from "react-pageflip";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 import { Button } from "./components/ui/button";
 
@@ -27,8 +29,18 @@ import {
   Clock,
 } from "lucide-react";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
+
+type ComponentType =
+  | "battery"
+  | "wire"
+  | "switch"
+  | "led"
+  | "resistor"
+  | "diode"
+  | "transistor"
+  | "capacitor";
 
 /* =========================================================
    APP
@@ -272,6 +284,9 @@ function ForumBook() {
   const [bookOpened, setBookOpened] =
     useState(false);
 
+  const [selectedComponent, setSelectedComponent] =
+    useState<ComponentType>("battery");
+
   /* STUDENT DETAILS */
 
   const [studentName, setStudentName] =
@@ -294,6 +309,12 @@ function ForumBook() {
 
   const [currentPage, setCurrentPage] =
     useState(0);
+
+  const [isGeneratingPDF, setIsGeneratingPDF] =
+    useState(false);
+
+  const pdfPagesRef =
+    useRef<HTMLDivElement>(null);
 
 
   /* =======================================================
@@ -339,47 +360,71 @@ function ForumBook() {
      BOOK PAGES
   ======================================================= */
 
- const pages = [
+  const pages = [
 
-  /* 0 - FRONT COVER */
-  <div className="h-full w-full bg-white" />,
+    /* 0 - COVER */
+    <div className="h-full w-full bg-white" />,
 
-  /* 1 - THE PROBLEM */
-  <Page1RiyaStory />,
+    /* 1 - THE PROBLEM */
+    <Page1RiyaStory />,
 
-  /* 2 - THE DISCOVERY */
-  <Page2GoogleSearch />,
+    /* 2 - THE DISCOVERY */
+    <Page2GoogleSearch />,
 
-  /* 3 - HOW IT WORKS */
-  <Page3HowItWorks />,
+    /* 3 - HOW IT WORKS — KEEP EXISTING PAGE 3 */
+    <Page3HowItWorks />,
 
-  /* 4 - GOOGLE SEARCH */
-  <Page4GoogleSearchTwo />,
+    /* 4 - VOLTAGE & CURRENT */
+    <Page4GoogleSearchTwo />,
 
-  /* 5 - ANIMATION */
-  <Page5Animation />,
+    /* 5 - ELECTRONICS INTRODUCTION */
+    <Page5Animation />,
 
-  /* 6 - CIRCUIT THEORY */
-  <Page6CircuitTheory />,
+    /* 6 - WHAT IS ELECTRONICS? */
+    <Page6WhatIsElectronics />,
 
-  /* 7 - CIRCUIT SIMULATION */
-  <Page7CircuitSim />,
+    /* 7 - WHAT IS A CIRCUIT? */
+    <Page7WhatIsCircuit />,
 
-  /* 8 - QUICK QUIZ
-     Questions 1, 2, 3 */
-  <Page8Workbook />,
+    /* 8 - HOW A CIRCUIT WORKS */
+    <Page8HowCircuitWorks />,
 
-  /* 9 - QUICK QUIZ
-     Questions 4, 5 */
-  <Page9Workbook />,
+    /* 9 - HOW TO FORM A SIMPLE CIRCUIT — 5 STEPS */
+    <Page9SimpleCircuit />,
 
-  /* 10 - ELECTRONICS COVER
-     BIG COVER */
-  <Page10ElectronicsCover />,
+    /* 10 - FORM A CIRCUIT — CIRCUIT BUILDER */
+    <Page10CircuitBuilder />,
 
-];
+    /* 11 - COMPONENTS */
+    <Page11Components
+      onSelectComponent={(component) => {
+        setSelectedComponent(component);
 
-  
+        setTimeout(() => {
+          if (flipBookRef.current) {
+            flipBookRef.current.pageFlip().flip(12);
+          }
+        }, 100);
+      }}
+    />,
+
+    /* 12 - COMPONENT WORKING */
+    <Page12componentFlowVideo
+      selectedComponent={selectedComponent}
+    />,
+
+    /* 13 - FINAL RECAP */
+    <Page13Recap />,
+
+    /* 14 - QUICK QUIZ 1–3 */
+    <Page14QuizOne />,
+
+    /* 15 - QUICK QUIZ 4–5 */
+    <Page15QuizTwo />,
+
+  ];
+
+
   /* =======================================================
      FLIP EVENT
   ======================================================= */
@@ -423,6 +468,94 @@ function ForumBook() {
   /* =======================================================
      PREVIOUS
   ======================================================= */
+
+  /* =======================================================
+     DOWNLOAD COMPLETE BOOK AS ONE PDF
+  ======================================================= */
+
+  const downloadPDF = async () => {
+
+    if (isGeneratingPDF) {
+      return;
+    }
+
+    setIsGeneratingPDF(true);
+
+    try {
+
+      const pdfPages =
+        pdfPagesRef.current?.querySelectorAll<HTMLElement>(
+          "[data-pdf-page]"
+        );
+
+      if (!pdfPages || pdfPages.length === 0) {
+        console.error("PDF pages were not found.");
+        return;
+      }
+
+      // Keep the same 560 × 700 aspect ratio as the ebook page.
+      const pdfWidth = 210;
+      const pdfHeight = 262.5;
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: [pdfWidth, pdfHeight],
+        compress: true,
+      });
+
+      for (let i = 0; i < pdfPages.length; i++) {
+
+        const page = pdfPages[i];
+
+        const canvas = await html2canvas(page, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: "#ffffff",
+          logging: false,
+          width: 560,
+          height: 700,
+          windowWidth: 560,
+          windowHeight: 700,
+        });
+
+        const imageData =
+          canvas.toDataURL("image/jpeg", 0.95);
+
+        if (i > 0) {
+          pdf.addPage([pdfWidth, pdfHeight], "portrait");
+        }
+
+        pdf.addImage(
+          imageData,
+          "JPEG",
+          0,
+          0,
+          pdfWidth,
+          pdfHeight,
+          undefined,
+          "FAST"
+        );
+      }
+
+      pdf.save("MEG-Zcuit.pdf");
+
+    } catch (error) {
+
+      console.error(
+        "PDF generation failed:",
+        error
+      );
+
+    } finally {
+
+      setIsGeneratingPDF(false);
+
+    }
+
+  };
+
 
   const previousPage = () => {
 
@@ -482,137 +615,97 @@ function ForumBook() {
 
 
         {/* =================================================
-    BOOK CONTROLS
-================================================= */}
+            BOOK CONTROLS
+        ================================================= */}
 
-<div
-  className={`
-    w-full
-    max-w-4xl
-    flex
-    items-center
-    justify-between
-    gap-4
-    mb-6
-    px-5
-    py-4
-    rounded-2xl
-    bg-slate-800
-    border-2
-    border-slate-600
-    shadow-2xl
-    transition-all
-    duration-300
-    ${
-      !bookOpened
-        ? "opacity-0 pointer-events-none"
-        : "opacity-100"
-    }
-  `}
->
+        <div
+          className={`
+            flex
+            items-center
+            gap-6
+            mb-8
+            bg-white/70
+            backdrop-blur-xl
+            px-8
+            py-3
+            rounded-full
+            border
+            border-white/70
+            shadow-lg
+            transition-all
+            duration-300
+            ${
+              !bookOpened
+                ? "opacity-0 pointer-events-none"
+                : "opacity-100"
+            }
+          `}
+        >
 
-  {/* PREVIOUS BUTTON */}
-
-  <button
-    onClick={previousPage}
-    disabled={!bookOpened || currentPage <= 1}
-    className="
-      min-w-[130px]
-      px-5
-      py-3
-      rounded-xl
-      bg-white
-      text-slate-800
-      border-2
-      border-slate-300
-      font-bold
-      text-sm
-      shadow-lg
-      flex
-      items-center
-      justify-center
-      gap-2
-      transition-all
-      duration-200
-      hover:bg-blue-50
-      hover:border-blue-400
-      hover:text-blue-700
-      active:scale-95
-      disabled:opacity-40
-      disabled:cursor-not-allowed
-    "
-  >
-    <span className="text-xl">
-      ←
-    </span>
-
-    Previous
-  </button>
+          <Button
+            variant="outline"
+            onClick={previousPage}
+            disabled={currentPage <= 1}
+            className="
+              rounded-full
+              border-blue-200
+              text-blue-700
+              hover:bg-blue-50
+              bg-white
+            "
+          >
+            ← Prev
+          </Button>
 
 
-  {/* PAGE NUMBER */}
-
-  <div
-    className="
-      min-w-[120px]
-      px-5
-      py-3
-      rounded-xl
-      bg-slate-700
-      border-2
-      border-slate-500
-      text-white
-      font-extrabold
-      text-sm
-      text-center
-      shadow-inner
-    "
-  >
-    Page {currentPage} / {pages.length - 1}
-  </div>
+          <div
+            className="
+              text-sm
+              font-bold
+              text-slate-500
+              min-w-[100px]
+              text-center
+            "
+          >
+            Page {currentPage} / {pages.length - 1}
+          </div>
 
 
-  {/* NEXT BUTTON */}
+          <Button
+            onClick={nextPage}
+            disabled={
+              !bookOpened ||
+              currentPage >= pages.length - 1
+            }
+            className="
+              rounded-full
+              bg-blue-600
+              text-white
+              hover:bg-blue-700
+            "
+          >
+            Next →
+          </Button>
 
-  <button
-    onClick={nextPage}
-    disabled={
-      !bookOpened ||
-      currentPage >= pages.length - 1
-    }
-    className="
-      min-w-[130px]
-      px-5
-      py-3
-      rounded-xl
-      bg-blue-600
-      text-white
-      border-2
-      border-blue-400
-      font-bold
-      text-sm
-      shadow-lg
-      flex
-      items-center
-      justify-center
-      gap-2
-      transition-all
-      duration-200
-      hover:bg-blue-700
-      hover:border-blue-300
-      active:scale-95
-      disabled:opacity-40
-      disabled:cursor-not-allowed
-    "
-  >
-    Next
 
-    <span className="text-xl">
-      →
-    </span>
-  </button>
+          <Button
+            onClick={downloadPDF}
+            disabled={isGeneratingPDF}
+            className="
+              rounded-full
+              bg-emerald-600
+              text-white
+              hover:bg-emerald-700
+              disabled:opacity-60
+            "
+          >
+            {isGeneratingPDF
+              ? "Creating PDF..."
+              : "⬇ Download PDF"}
+          </Button>
 
-</div>
+        </div>
+
 
         {/* =================================================
             FLIP BOOK
@@ -690,6 +783,37 @@ function ForumBook() {
             )}
 
           </HTMLFlipBook>
+
+          {/* =================================================
+              HIDDEN PDF PAGES
+              These are only used when creating the PDF.
+              The visible flipbook above is unchanged.
+          ================================================= */}
+
+          <div
+            ref={pdfPagesRef}
+            className="
+              fixed
+              left-[-10000px]
+              top-0
+              pointer-events-none
+            "
+            aria-hidden="true"
+          >
+            {pages.map((page, index) => (
+              <div
+                key={`pdf-page-${index}`}
+                data-pdf-page
+                className="bg-white overflow-hidden"
+                style={{
+                  width: "560px",
+                  height: "700px",
+                }}
+              >
+                {page}
+              </div>
+            ))}
+          </div>
 
         </div>
 
@@ -2692,32 +2816,514 @@ function Page4GoogleSearchTwo() {
 ========================================================= */
 
 function Page5Animation() {
+  return (
+    <div className="h-full flex flex-col p-8 bg-slate-50 overflow-hidden">
+      <div className="flex items-center gap-3 mb-4 shrink-0">
+        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">5</div>
+        <h2 className="text-3xl font-extrabold text-slate-900">💡 Electronics in Action</h2>
+      </div>
+
+      <div className="flex-1 min-h-0 flex flex-col justify-center gap-5">
+        <div className="rounded-3xl bg-white border border-slate-200 p-6 shadow-sm text-center">
+          <div className="text-6xl mb-4">⚡ 💡 ⚙️</div>
+          <h3 className="text-2xl font-extrabold text-slate-800">Electronics starts here!</h3>
+          <p className="text-slate-600 font-medium leading-relaxed mt-3 max-w-xl mx-auto">
+            Electronics uses electrical components to control and process electrical signals.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4 text-center">
+            <div className="text-3xl">📥</div>
+            <p className="font-extrabold text-slate-800 mt-2">Input</p>
+          </div>
+          <div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-4 text-center">
+            <div className="text-3xl">⚙️</div>
+            <p className="font-extrabold text-slate-800 mt-2">Control / Process</p>
+          </div>
+          <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4 text-center">
+            <div className="text-3xl">📤</div>
+            <p className="font-extrabold text-slate-800 mt-2">Output</p>
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-white border border-blue-100 px-5 py-3 text-center text-sm font-bold text-blue-700">
+          INPUT → CONTROL / PROCESS → OUTPUT
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* =========================================================
+   NEW PAGE 6 - WHAT IS ELECTRONICS?
+========================================================= */
+function Page6WhatIsElectronics() {
+  return (
+    <div className="h-full flex flex-col p-7 bg-white overflow-hidden">
+      <div className="flex items-center gap-3 mb-4 shrink-0">
+        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">6</div>
+        <div>
+          <h2 className="text-2xl font-extrabold text-slate-900">💡 What is Electronics?</h2>
+          <p className="text-xs text-slate-500 font-medium mt-1">Using electrical components to control and process electrical signals.</p>
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-0 flex flex-col justify-center gap-5">
+        <div className="rounded-2xl bg-slate-50 border border-slate-200 p-5 text-center">
+          <p className="text-slate-700 font-medium leading-relaxed">
+            Electronics uses electrical components to control or process electrical signals.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 items-center">
+          <div className="rounded-2xl bg-blue-50 border border-blue-100 p-5 text-center">
+            <div className="text-3xl mb-2">📥</div>
+            <h3 className="font-extrabold text-slate-800">INPUT</h3>
+            <p className="text-xs text-slate-500 mt-1">A signal or information enters.</p>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-500 mb-1">→</div>
+            <div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-5">
+              <div className="text-3xl mb-2">⚙️</div>
+              <h3 className="font-extrabold text-slate-800">CONTROL / PROCESS</h3>
+              <p className="text-xs text-slate-500 mt-1">The circuit processes the signal.</p>
+            </div>
+            <div className="text-2xl font-bold text-blue-500 mt-1">→</div>
+          </div>
+          <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-5 text-center">
+            <div className="text-3xl mb-2">📤</div>
+            <h3 className="font-extrabold text-slate-800">OUTPUT</h3>
+            <p className="text-xs text-slate-500 mt-1">The result is produced.</p>
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-center text-sm font-bold text-slate-700">
+          Example: an automatic night light detects darkness → processes the signal → switches the LED on.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   NEW PAGE 7 - WHAT IS A CIRCUIT?
+========================================================= */
+function Page7WhatIsCircuit() {
+  return (
+    <div className="h-full flex flex-col p-8 bg-slate-50 overflow-hidden">
+      <div className="flex items-center gap-3 mb-4 shrink-0">
+        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">7</div>
+        <h2 className="text-3xl font-extrabold text-slate-900">🔌 What is a Circuit?</h2>
+      </div>
+      <p className="text-slate-600 font-medium mb-5 shrink-0">
+        A circuit is a complete path through which electric current can flow.
+      </p>
+
+      <div className="flex-1 min-h-0 grid grid-cols-2 gap-5">
+        <div className="rounded-3xl bg-white border-2 border-emerald-200 p-6 flex flex-col justify-center text-center shadow-sm">
+          <div className="text-5xl mb-4">✅</div>
+          <h3 className="text-xl font-extrabold text-emerald-700">Complete Path</h3>
+          <p className="text-sm text-slate-600 font-medium mt-2 leading-relaxed">
+            The path is complete, so electric current can flow.
+          </p>
+        </div>
+        <div className="rounded-3xl bg-white border-2 border-red-200 p-6 flex flex-col justify-center text-center shadow-sm">
+          <div className="text-5xl mb-4">❌</div>
+          <h3 className="text-xl font-extrabold text-red-600">Broken Path</h3>
+          <p className="text-sm text-slate-600 font-medium mt-2 leading-relaxed">
+            The path is broken, so electric current cannot flow.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-2xl bg-blue-50 border border-blue-100 p-4 text-center shrink-0">
+        <span className="font-extrabold text-blue-700">⚡ Key idea:</span>{' '}
+        <span className="font-medium text-slate-700">Complete path = current can flow.</span>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   NEW PAGE 8 - HOW A CIRCUIT WORKS
+========================================================= */
+function Page8HowCircuitWorks() {
+  return (
+    <div className="h-full flex flex-col p-7 bg-white overflow-hidden">
+      <div className="flex items-center gap-3 mb-4 shrink-0">
+        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">8</div>
+        <h2 className="text-2xl font-extrabold text-slate-900">🔌 How a Circuit Works</h2>
+      </div>
+
+      <div className="flex-1 min-h-0 flex flex-col justify-center gap-5">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4 text-center">
+            <div className="text-4xl">🔋</div>
+            <h3 className="font-extrabold mt-2">Battery</h3>
+            <p className="text-xs text-slate-600 mt-1">Provides electrical energy.</p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 text-center">
+            <div className="text-4xl">〰️</div>
+            <h3 className="font-extrabold mt-2">Wires</h3>
+            <p className="text-xs text-slate-600 mt-1">Provide a path for current.</p>
+          </div>
+          <div className="rounded-2xl bg-amber-50 border border-amber-100 p-4 text-center">
+            <div className="text-4xl">🔘</div>
+            <h3 className="font-extrabold mt-2">Switch</h3>
+            <p className="text-xs text-slate-600 mt-1">Opens or closes the path.</p>
+          </div>
+          <div className="rounded-2xl bg-yellow-50 border border-yellow-100 p-4 text-center">
+            <div className="text-4xl">💡</div>
+            <h3 className="font-extrabold mt-2">Bulb / LED</h3>
+            <p className="text-xs text-slate-600 mt-1">Uses electrical energy and produces light.</p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border-2 border-blue-200 bg-slate-50 p-5 text-center">
+          <div className="text-xl font-extrabold text-blue-700">🔋 → 〰️ → 🔘 → 〰️ → 💡</div>
+          <p className="text-sm text-slate-600 font-medium mt-2">Together, the components form a complete circuit.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   NEW PAGE 9 - HOW TO FORM A SIMPLE CIRCUIT
+========================================================= */
+function Page9SimpleCircuit() {
+  const steps = [
+    ['1', '🔋', 'Take a battery.', 'The battery provides electrical energy.'],
+    ['2', '🔌', 'Connect one wire from the battery to the bulb.', 'This starts the path.'],
+    ['3', '〰️', 'Connect another wire from the bulb back to the battery.', 'This completes the path.'],
+    ['4', '🔄', 'Make sure the path is closed.', 'A complete path allows current to flow.'],
+    ['5', '💡', 'Observe the bulb.', 'The bulb can light when current flows.'],
+  ];
 
   return (
+    <div className="h-full flex flex-col p-7 bg-slate-50 overflow-hidden">
+      <div className="flex items-center gap-3 mb-4 shrink-0">
+        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">9</div>
+        <h2 className="text-2xl font-extrabold text-slate-900">🛠️ How to Form a Simple Circuit — 5 Steps</h2>
+      </div>
 
-    <div
-      className="
-        h-full
-        flex
-        flex-col
-        p-10
-        bg-slate-50
-      "
-    >
+      <div className="flex-1 min-h-0 grid grid-rows-5 gap-2">
+        {steps.map(([number, icon, title, description]) => (
+          <div key={number} className="rounded-xl bg-white border border-slate-200 px-4 py-2 flex items-center gap-4 shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold shrink-0">{number}</div>
+            <div className="text-2xl w-9 text-center shrink-0">{icon}</div>
+            <div className="min-w-0">
+              <p className="font-extrabold text-slate-800 text-sm">{title}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-      <div
-        className="
-          flex
-          items-center
-          gap-3
-          mb-6
-        "
-      >
+/* =========================================================
+   NEW PAGE 10 - CIRCUIT BUILDER
+========================================================= */
+function Page10CircuitBuilder() {
+  return (
+    <div className="h-full flex flex-col p-7 bg-slate-50 overflow-hidden">
+      <div className="flex items-center gap-3 mb-3 shrink-0">
+        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">10</div>
+        <div>
+          <h2 className="text-2xl font-extrabold text-slate-900">🧩 Form a Circuit — Circuit Builder</h2>
+          <p className="text-slate-500 text-xs font-medium mt-1">Drag and drop the components to connect the battery to the LED!</p>
+        </div>
+      </div>
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <CircuitBuilder />
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   NEW PAGE 11 - COMPONENTS
+========================================================= */
+/* =========================================================
+   PAGE 11 - COMPONENTS
+========================================================= */
+
+function Page11Components({
+  onSelectComponent,
+}: {
+  onSelectComponent: (component: ComponentType) => void;
+}) {
+  const components: Array<{
+    type: ComponentType;
+    image: string;
+    name: string;
+    short: string;
+  }> = [
+    {
+      type: "battery",
+      image: "/images/component-images/battery.png",
+      name: "Battery",
+      short: "Gives Energy",
+    },
+    {
+      type: "wire",
+      image: "/images/component-images/wire.png",
+      name: "Wire",
+      short: "Carries Current",
+    },
+    {
+      type: "switch",
+      image: "/images/component-images/switch.png",
+      name: "Switch",
+      short: "Controls Flow",
+    },
+    {
+      type: "led",
+      image: "/images/component-images/led.png",
+      name: "LED",
+      short: "Produces Light",
+    },
+    {
+      type: "resistor",
+      image: "/images/component-images/resistor.png",
+      name: "Resistor",
+      short: "Limits Current",
+    },
+    {
+      type: "diode",
+      image: "/images/component-images/diode.png",
+      name: "Diode",
+      short: "One Direction",
+    },
+    {
+      type: "transistor",
+      image: "/images/component-images/transistor.png",
+      name: "Transistor",
+      short: "Switches / Controls",
+    },
+    {
+      type: "capacitor",
+      image: "/images/component-images/capacitor.png",
+      name: "Capacitor",
+      short: "Stores Energy",
+    },
+  ];
+
+  return (
+    <div className="h-full w-full flex flex-col p-6 bg-slate-50 overflow-hidden">
+
+      {/* HEADER */}
+      <div className="flex items-center gap-3 mb-4 shrink-0">
+        <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
+          11
+        </div>
+
+        <div>
+          <h2 className="text-2xl font-extrabold text-slate-900 leading-tight">
+            🔌 Exploring Electronic Components
+          </h2>
+
+          <p className="text-sm text-slate-500 font-medium mt-1">
+            Click on any component to learn how it works!
+          </p>
+        </div>
+      </div>
+
+      {/* COMPONENT GRID */}
+      <div className="flex-1 min-h-0 grid grid-cols-4 grid-rows-2 gap-3">
+
+        {components.map((component) => (
+          <button
+            key={component.type}
+            type="button"
+            onClick={() => onSelectComponent(component.type)}
+            className="
+              group
+              rounded-2xl
+              border
+              border-slate-200
+              bg-white
+              p-3
+              flex
+              flex-col
+              items-center
+              justify-center
+              text-center
+              shadow-sm
+              transition-all
+              duration-200
+              hover:-translate-y-1
+              hover:shadow-lg
+              hover:border-blue-400
+              active:scale-95
+              overflow-hidden
+            "
+          >
+
+            {/* COMPONENT IMAGE */}
+            <div className="w-full h-[105px] flex items-center justify-center mb-2 shrink-0">
+              <img
+                src={component.image}
+                alt={component.name}
+                className="
+                  max-w-[120px]
+                  max-h-[95px]
+                  w-auto
+                  h-auto
+                  object-contain
+                  transition-transform
+                  duration-300
+                  group-hover:scale-110
+                "
+              />
+            </div>
+
+            {/* COMPONENT NAME */}
+            <div className="text-sm font-extrabold text-slate-900 leading-tight">
+              {component.name}
+            </div>
+
+            {/* DESCRIPTION */}
+            <div className="text-[10px] text-slate-500 font-medium mt-1 leading-tight">
+              {component.short}
+            </div>
+
+            {/* BUTTON TEXT */}
+            <div className="mt-2 text-[10px] font-bold text-blue-600 group-hover:text-blue-700">
+              ▶ View working
+            </div>
+
+          </button>
+        ))}
+
+      </div>
+    </div>
+  );
+}
+function Page12componentFlowVideo({
+  selectedComponent,
+}: {
+  selectedComponent: ComponentType;
+}) {
+  const componentInfo: Record<
+    ComponentType,
+    {
+      icon: string;
+      name: string;
+      gif: string;
+      what: string;
+      how: string;
+      used: string;
+    }
+  > = {
+    battery: {
+      icon: "🔋",
+      name: "Battery",
+      gif: "/images/GIF/battery.gif",
+      what: "A battery is a source of electrical energy.",
+      how:
+        "It creates a voltage difference that pushes electric charges through a circuit.",
+      used:
+        "Used in torches, toys, remotes, portable devices and many electronic circuits.",
+    },
+
+    wire: {
+      icon: "🔌",
+      name: "Wire",
+      gif: "/images/GIF/wire.gif",
+      what: "A wire provides a conducting path for electric current.",
+      how:
+        "Electrons can move through the conducting material when a voltage is applied.",
+      used:
+        "Used to connect batteries, switches, LEDs and other circuit components.",
+    },
+
+    switch: {
+      icon: "🔘",
+      name: "Switch",
+      gif: "/images/GIF/switch.gif",
+      what: "A switch controls whether a circuit is open or closed.",
+      how:
+        "When closed, it completes the electrical path. When open, it breaks the path.",
+      used:
+        "Used in lights, appliances, machines and electronic devices.",
+    },
+
+    led: {
+      icon: "💡",
+      name: "LED",
+      gif: "/images/GIF/led.gif",
+      what: "An LED is a semiconductor device that produces light.",
+      how:
+        "When current flows through the LED in the correct direction, electrical energy is converted into light.",
+      used:
+        "Used in indicators, displays, lighting and electronic devices.",
+    },
+
+    resistor: {
+      icon: "〰️",
+      name: "Resistor",
+      gif: "/images/GIF/resistor.gif",
+      what: "A resistor is a component that limits electric current.",
+      how:
+        "It provides resistance to the flow of electric current.",
+      used:
+        "Used to control current and protect other components in circuits.",
+    },
+
+    diode: {
+      icon: "➡️",
+      name: "Diode",
+      gif: "/images/GIF/diode.gif",
+      what:
+        "A diode is a semiconductor component that mainly allows current in one direction.",
+      how:
+        "It conducts when forward biased and restricts current in the opposite direction.",
+      used:
+        "Used in power supplies, protection circuits and signal processing.",
+    },
+
+    transistor: {
+      icon: "🔀",
+      name: "Transistor",
+      gif: "/images/GIF/transistor.gif",
+      what:
+        "A transistor is a semiconductor device used to control electrical signals.",
+      how:
+        "A small control signal can control a larger current through the device.",
+      used:
+        "Used in switches, amplifiers, processors and electronic circuits.",
+    },
+
+    capacitor: {
+      icon: "⚡",
+      name: "Capacitor",
+      gif: "/images/GIF/capacitor.gif",
+      what:
+        "A capacitor is a component that stores electrical energy.",
+      how:
+        "Electrical charge builds up on its plates and can later be released.",
+      used:
+        "Used for energy storage, filtering, smoothing and timing circuits.",
+    },
+  };
+
+  const item = componentInfo[selectedComponent];
+
+  return (
+    <div className="h-full w-full flex flex-col p-6 bg-slate-50 overflow-hidden">
+
+      {/* ================= HEADER ================= */}
+
+      <div className="flex items-center gap-3 mb-3 shrink-0">
 
         <div
           className="
-            w-8
-            h-8
+            w-9 h-9
             rounded-full
             bg-blue-600
             text-white
@@ -2725,76 +3331,207 @@ function Page5Animation() {
             items-center
             justify-center
             font-bold
+            text-sm
+            shrink-0
           "
         >
-          5
+          12
         </div>
 
-        <h2
-          className="
-            text-3xl
-            font-extrabold
-            text-slate-900
-          "
-        >
-          Electronics in Action
-        </h2>
+        <div>
+          <h2 className="text-2xl font-extrabold text-slate-900">
+            Component Working Method
+          </h2>
+
+          <p className="text-sm text-slate-500 font-medium mt-1">
+            See how the selected component works
+          </p>
+        </div>
 
       </div>
 
 
+      {/* =====================================================
+          GIF FRAME
+          GIF IS FITTED INSIDE THE WHITE FRAME
+      ====================================================== */}
+
       <div
         className="
-          flex-1
-          rounded-2xl
-          border-4
-          border-dashed
-          border-slate-300
+          shrink-0
+          w-full
+          h-[260px]
           bg-white
-          flex
-          flex-col
-          items-center
-          justify-center
-          text-slate-400
-          gap-4
-          shadow-sm
+          rounded-2xl
+          border-2
+          border-slate-200
+          shadow-md
+          overflow-hidden
+          p-2
         "
       >
 
-        <PlayCircle
+        <div
           className="
-            w-16
-            h-16
-            opacity-50
-          "
-        />
-
-        <p
-          className="
-            font-bold
-            text-sm
-            uppercase
-            tracking-widest
-            text-center
-            px-8
+            relative
+            w-full
+            h-full
+            flex
+            items-center
+            justify-center
+            overflow-hidden
           "
         >
-          [ Insert Custom Electronics
-          <br />
-          Animation Here ]
-        </p>
+
+          <img
+            key={item.gif}
+            src={item.gif}
+            alt={`${item.name} working animation`}
+            className="
+              absolute
+              left-1/2
+              top-1/2
+              -translate-x-1/2
+              -translate-y-1/2
+              w-[92%]
+              h-[92%]
+              object-contain
+              object-center
+              block
+            "
+          />
+
+        </div>
+
+      </div>
+
+
+      {/* ================= COMPONENT NAME ================= */}
+
+      <div className="shrink-0 text-center mt-3 mb-3">
+
+        <h3 className="text-xl font-extrabold text-blue-700">
+          {item.icon} {item.name}
+        </h3>
+
+      </div>
+
+
+      {/* ================= CONTENT ================= */}
+
+      <div className="flex-1 min-h-0 grid grid-cols-2 gap-3">
+
+        {/* WHAT IS IT */}
+
+        <div
+          className="
+            bg-white
+            rounded-xl
+            border
+            border-slate-200
+            shadow-sm
+            p-4
+            overflow-hidden
+          "
+        >
+
+          <h4 className="text-base font-extrabold text-slate-900 mb-2">
+            🔎 What is it?
+          </h4>
+
+          <p className="text-sm text-slate-600 leading-relaxed">
+            {item.what}
+          </p>
+
+        </div>
+
+
+        {/* HOW DOES IT WORK */}
+
+        <div
+          className="
+            bg-white
+            rounded-xl
+            border
+            border-slate-200
+            shadow-sm
+            p-4
+            overflow-hidden
+          "
+        >
+
+          <h4 className="text-base font-extrabold text-slate-900 mb-2">
+            ⚙️ How does it work?
+          </h4>
+
+          <p className="text-sm text-slate-600 leading-relaxed">
+            {item.how}
+          </p>
+
+        </div>
+
+
+        {/* WHERE IS IT USED */}
+
+        <div
+          className="
+            col-span-2
+            bg-white
+            rounded-xl
+            border
+            border-slate-200
+            shadow-sm
+            p-4
+            overflow-hidden
+          "
+        >
+
+          <h4 className="text-base font-extrabold text-slate-900 mb-2">
+            📍 Where is it used?
+          </h4>
+
+          <p className="text-sm text-slate-600 leading-relaxed">
+            {item.used}
+          </p>
+
+        </div>
 
       </div>
 
     </div>
-
+  );
+}
+/* =========================================================
+   NEW PAGE 13 - RECAP
+========================================================= */
+function Page13Recap() {
+  return (
+    <div className="h-full flex flex-col p-8 bg-white overflow-hidden">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">13</div>
+        <h2 className="text-3xl font-extrabold text-slate-900">🎯 Final Recap</h2>
+      </div>
+      <div className="space-y-3 flex-1">
+        <div className="rounded-xl bg-blue-50 border border-blue-100 p-4"><b>⚡ Electricity</b><span className="text-slate-600"> — movement of electric charges.</span></div>
+        <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-4"><b>💡 Electronics</b><span className="text-slate-600"> — electrical components can control or process electrical signals.</span></div>
+        <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-4"><b>🔌 Circuit</b><span className="text-slate-600"> — a complete path through which electric current can flow.</span></div>
+        <div className="rounded-xl bg-amber-50 border border-amber-100 p-4"><b>🧩 Simple circuit</b><span className="text-slate-600"> — battery, wires, switch and bulb/LED work together.</span></div>
+        <div className="rounded-2xl bg-slate-50 border border-slate-200 p-5 text-center"><span className="text-xl font-extrabold">🔋 → 🔘 → 💡</span><p className="text-sm text-slate-500 mt-2">Complete the path to allow current to flow.</p></div>
+      </div>
+    </div>
   );
 }
 
-
 /* =========================================================
-   PAGE 6
+   QUIZ PAGE ALIASES — KEEP EXISTING QUIZ CONTENT
 ========================================================= */
+function Page14QuizOne() {
+  return <Page8Workbook />;
+}
+
+function Page15QuizTwo() {
+  return <Page9Workbook />;
+}
 
 function Page6CircuitTheory() {
 
@@ -4042,10 +4779,6 @@ function Page8Workbook() {
   );
 }
 
-/* =========================================================
-   PAGE 9 — QUICK QUIZ
-========================================================= */
-
 function Page9Workbook() {
   const [answers, setAnswers] = useState<{
     q4: string | null;
@@ -4055,17 +4788,14 @@ function Page9Workbook() {
     q5: null,
   });
 
-  const selectAnswer = (
-    question: "q4" | "q5",
-    answer: string
-  ) => {
+  const selectAnswer = (question: "q4" | "q5", answer: string) => {
     setAnswers((prev) => ({
       ...prev,
       [question]: answer,
     }));
   };
 
-  const getAnswerStyle = (
+  const answerStyle = (
     question: "q4" | "q5",
     option: string,
     correct: string
@@ -4090,950 +4820,199 @@ function Page9Workbook() {
   return (
     <div className="h-full flex flex-col p-5 bg-white overflow-hidden">
 
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
-
-      <div className="flex items-center gap-3 mb-2 shrink-0">
-
-        <div
-          className="
-            w-8
-            h-8
-            rounded-full
-            bg-blue-600
-            text-white
-            flex
-            items-center
-            justify-center
-            font-bold
-            shrink-0
-          "
-        >
+      {/* HEADER */}
+      <div className="flex items-center gap-3 mb-3 shrink-0">
+        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
           9
         </div>
-
         <div>
-          <h2
-            className="
-              text-2xl
-              font-extrabold
-              text-slate-900
-              leading-none
-            "
-          >
+          <h2 className="text-2xl font-extrabold text-slate-900 leading-none">
             Quick Quiz
           </h2>
-
-          <p
-            className="
-              text-[11px]
-              text-slate-500
-              font-medium
-              mt-1
-            "
-          >
+          <p className="text-[11px] text-slate-500 font-medium mt-1">
             Think • Choose • Learn!
           </p>
         </div>
-
       </div>
 
-
-      {/* =====================================================
-          SCENARIO IMAGE INSERTION FRAME
-          Keep your Page 9 scenario image here
-      ===================================================== */}
-
-      <div
-        className="
-          w-full
-          h-[250px]
-          rounded-2xl
-          border-2
-          border-blue-200
-          bg-slate-50
-          overflow-hidden
-          shrink-0
-          mb-4
-          shadow-sm
-        "
-      >
-
-        <img
-          src="/images/page9-scenario.png"
-          alt="Electricity scenario"
-          className="
-            w-full
-            h-full
-            object-contain
-          "
-        />
-
+      {/* LARGE IMAGE INSERT FRAME — NO GIF */}
+      <div className="w-full h-[220px] rounded-2xl border-2 border-blue-200 bg-slate-50 overflow-hidden shrink-0 mb-4 flex items-center justify-center">
+        <div className="text-center text-slate-400">
+          <div className="text-4xl mb-2">🖼️</div>
+          <p className="text-xs font-bold uppercase tracking-wide">
+            Scenario Image
+          </p>
+          <p className="text-[10px] mt-1">
+            Insert your image here
+          </p>
+        </div>
       </div>
 
+      {/* QUESTIONS 4 + 5 */}
+      <div className="flex-1 min-h-0 grid grid-cols-2 gap-3">
 
-      {/* =====================================================
-          QUESTIONS 4 & 5
-      ===================================================== */}
-
-      <div
-        className="
-          flex-1
-          min-h-0
-          grid
-          grid-cols-2
-          gap-4
-        "
-      >
-
-        {/* ===================================================
-            QUESTION 4
-        =================================================== */}
-
-        <div
-          className="
-            rounded-xl
-            border-2
-            border-blue-200
-            bg-blue-50
-            p-3
-            flex
-            flex-col
-            min-h-0
-            overflow-hidden
-          "
-        >
-
-          {/* Question heading */}
-
-          <div className="flex items-start gap-2 mb-2">
-
-            <div
-              className="
-                w-7
-                h-7
-                rounded-full
-                bg-yellow-400
-                text-slate-900
-                flex
-                items-center
-                justify-center
-                font-extrabold
-                shrink-0
-                text-sm
-              "
-            >
+        {/* QUESTION 4 */}
+        <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-3 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex items-start gap-2 mb-3">
+            <div className="w-7 h-7 shrink-0 rounded-full bg-yellow-400 text-slate-900 flex items-center justify-center font-extrabold text-sm">
               4
             </div>
-
-            <p
-              className="
-                text-[12px]
-                font-extrabold
-                text-slate-900
-                leading-tight
-              "
-            >
-              What happens when the switch is closed?
+            <p className="font-extrabold text-xs leading-tight text-slate-900">
+              What happens when a switch is ON?
             </p>
-
           </div>
 
-
-          {/* Answer buttons */}
-
-          <div className="space-y-1.5">
-
-            {/* A */}
-
-            <button
-              onClick={() => selectAnswer("q4", "A")}
-              className={`
-                w-full
-                text-left
-                px-2
-                py-2
-                rounded-lg
-                border
-                transition-all
-                duration-200
-                text-[10px]
-                font-semibold
-                ${getAnswerStyle("q4", "A", "B")}
-              `}
-            >
-
-              <span
-                className="
-                  inline-flex
-                  w-5
-                  h-5
-                  rounded-full
-                  bg-cyan-100
-                  text-cyan-700
-                  items-center
-                  justify-center
-                  mr-1
-                  font-extrabold
-                "
+          <div className="space-y-2">
+            {[
+              ["A", "The circuit becomes complete"],
+              ["B", "The current stops"],
+              ["C", "The battery turns OFF"],
+              ["D", "The wire disappears"],
+            ].map(([letter, text]) => (
+              <button
+                key={letter}
+                onClick={() => selectAnswer("q4", letter)}
+                className={`w-full text-left px-2 py-2 rounded-lg border transition-all duration-200 text-[10px] font-semibold ${answerStyle("q4", letter, "A")}`}
               >
-                A
-              </span>
-
-              The circuit is broken
-
-            </button>
-
-
-            {/* B */}
-
-            <button
-              onClick={() => selectAnswer("q4", "B")}
-              className={`
-                w-full
-                text-left
-                px-2
-                py-2
-                rounded-lg
-                border
-                transition-all
-                duration-200
-                text-[10px]
-                font-semibold
-                ${getAnswerStyle("q4", "B", "B")}
-              `}
-            >
-
-              <span
-                className="
-                  inline-flex
-                  w-5
-                  h-5
-                  rounded-full
-                  bg-cyan-100
-                  text-cyan-700
-                  items-center
-                  justify-center
-                  mr-1
-                  font-extrabold
-                "
-              >
-                B
-              </span>
-
-              Electric current can flow
-
-            </button>
-
-
-            {/* C */}
-
-            <button
-              onClick={() => selectAnswer("q4", "C")}
-              className={`
-                w-full
-                text-left
-                px-2
-                py-2
-                rounded-lg
-                border
-                transition-all
-                duration-200
-                text-[10px]
-                font-semibold
-                ${getAnswerStyle("q4", "C", "B")}
-              `}
-            >
-
-              <span
-                className="
-                  inline-flex
-                  w-5
-                  h-5
-                  rounded-full
-                  bg-cyan-100
-                  text-cyan-700
-                  items-center
-                  justify-center
-                  mr-1
-                  font-extrabold
-                "
-              >
-                C
-              </span>
-
-              The battery stops working
-
-            </button>
-
-
-            {/* D */}
-
-            <button
-              onClick={() => selectAnswer("q4", "D")}
-              className={`
-                w-full
-                text-left
-                px-2
-                py-2
-                rounded-lg
-                border
-                transition-all
-                duration-200
-                text-[10px]
-                font-semibold
-                ${getAnswerStyle("q4", "D", "B")}
-              `}
-            >
-
-              <span
-                className="
-                  inline-flex
-                  w-5
-                  h-5
-                  rounded-full
-                  bg-cyan-100
-                  text-cyan-700
-                  items-center
-                  justify-center
-                  mr-1
-                  font-extrabold
-                "
-              >
-                D
-              </span>
-
-              The wire disappears
-
-            </button>
-
+                <span className="inline-flex w-5 h-5 rounded-full bg-cyan-100 text-cyan-700 items-center justify-center mr-1 font-extrabold">
+                  {letter}
+                </span>
+                {text}
+              </button>
+            ))}
           </div>
-
-
-          {/* =================================================
-              QUESTION 4 ANIMATION
-          ================================================= */}
 
           <div className="mt-auto pt-2 text-center">
-
-            {answers.q4 === "B" && (
+            {answers.q4 === "A" && (
               <div className="animate-bounce">
-
-                <div className="text-2xl">
-                  🤩
-                </div>
-
-                <p
-                  className="
-                    text-[10px]
-                    font-extrabold
-                    text-emerald-600
-                  "
-                >
+                <div className="text-2xl">🤩</div>
+                <p className="text-[10px] font-extrabold text-emerald-600">
                   Correct! 🎉
                 </p>
-
               </div>
             )}
-
-            {answers.q4 && answers.q4 !== "B" && (
+            {answers.q4 && answers.q4 !== "A" && (
               <div className="animate-pulse">
-
-                <div className="text-2xl">
-                  😟
-                </div>
-
-                <p
-                  className="
-                    text-[10px]
-                    font-extrabold
-                    text-red-600
-                  "
-                >
-                  No, it's wrong!
+                <div className="text-2xl">😟</div>
+                <p className="text-[10px] font-extrabold text-red-600">
+                  Noo, it's wrong!
                 </p>
-
               </div>
             )}
-
           </div>
-
         </div>
 
-
-        {/* ===================================================
-            QUESTION 5
-        =================================================== */}
-
-        <div
-          className="
-            rounded-xl
-            border-2
-            border-emerald-200
-            bg-emerald-50
-            p-3
-            flex
-            flex-col
-            min-h-0
-            overflow-hidden
-          "
-        >
-
-          {/* Question heading */}
-
-          <div className="flex items-start gap-2 mb-2">
-
-            <div
-              className="
-                w-7
-                h-7
-                rounded-full
-                bg-yellow-400
-                text-slate-900
-                flex
-                items-center
-                justify-center
-                font-extrabold
-                shrink-0
-                text-sm
-              "
-            >
+        {/* QUESTION 5 */}
+        <div className="rounded-xl border-2 border-yellow-300 bg-yellow-50 p-3 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex items-start gap-2 mb-3">
+            <div className="w-7 h-7 shrink-0 rounded-full bg-yellow-400 text-slate-900 flex items-center justify-center font-extrabold text-sm">
               5
             </div>
-
-            <p
-              className="
-                text-[12px]
-                font-extrabold
-                text-slate-900
-                leading-tight
-              "
-            >
-              What happens to the LED when current flows?
+            <p className="font-extrabold text-xs leading-tight text-slate-900">
+              Which component limits the flow of current?
             </p>
-
           </div>
 
-
-          {/* Answer buttons */}
-
-          <div className="space-y-1.5">
-
-            {/* A */}
-
-            <button
-              onClick={() => selectAnswer("q5", "A")}
-              className={`
-                w-full
-                text-left
-                px-2
-                py-2
-                rounded-lg
-                border
-                transition-all
-                duration-200
-                text-[10px]
-                font-semibold
-                ${getAnswerStyle("q5", "A", "C")}
-              `}
-            >
-
-              <span
-                className="
-                  inline-flex
-                  w-5
-                  h-5
-                  rounded-full
-                  bg-cyan-100
-                  text-cyan-700
-                  items-center
-                  justify-center
-                  mr-1
-                  font-extrabold
-                "
+          <div className="space-y-2">
+            {[
+              ["A", "Battery"],
+              ["B", "Resistor"],
+              ["C", "Bulb"],
+              ["D", "Wire"],
+            ].map(([letter, text]) => (
+              <button
+                key={letter}
+                onClick={() => selectAnswer("q5", letter)}
+                className={`w-full text-left px-2 py-2 rounded-lg border transition-all duration-200 text-[10px] font-semibold ${answerStyle("q5", letter, "B")}`}
               >
-                A
-              </span>
-
-              It turns off
-
-            </button>
-
-
-            {/* B */}
-
-            <button
-              onClick={() => selectAnswer("q5", "B")}
-              className={`
-                w-full
-                text-left
-                px-2
-                py-2
-                rounded-lg
-                border
-                transition-all
-                duration-200
-                text-[10px]
-                font-semibold
-                ${getAnswerStyle("q5", "B", "C")}
-              `}
-            >
-
-              <span
-                className="
-                  inline-flex
-                  w-5
-                  h-5
-                  rounded-full
-                  bg-cyan-100
-                  text-cyan-700
-                  items-center
-                  justify-center
-                  mr-1
-                  font-extrabold
-                "
-              >
-                B
-              </span>
-
-              It breaks the wire
-
-            </button>
-
-
-            {/* C */}
-
-            <button
-              onClick={() => selectAnswer("q5", "C")}
-              className={`
-                w-full
-                text-left
-                px-2
-                py-2
-                rounded-lg
-                border
-                transition-all
-                duration-200
-                text-[10px]
-                font-semibold
-                ${getAnswerStyle("q5", "C", "C")}
-              `}
-            >
-
-              <span
-                className="
-                  inline-flex
-                  w-5
-                  h-5
-                  rounded-full
-                  bg-cyan-100
-                  text-cyan-700
-                  items-center
-                  justify-center
-                  mr-1
-                  font-extrabold
-                "
-              >
-                C
-              </span>
-
-              It lights up
-
-            </button>
-
-
-            {/* D */}
-
-            <button
-              onClick={() => selectAnswer("q5", "D")}
-              className={`
-                w-full
-                text-left
-                px-2
-                py-2
-                rounded-lg
-                border
-                transition-all
-                duration-200
-                text-[10px]
-                font-semibold
-                ${getAnswerStyle("q5", "D", "C")}
-              `}
-            >
-
-              <span
-                className="
-                  inline-flex
-                  w-5
-                  h-5
-                  rounded-full
-                  bg-cyan-100
-                  text-cyan-700
-                  items-center
-                  justify-center
-                  mr-1
-                  font-extrabold
-                "
-              >
-                D
-              </span>
-
-              It becomes a battery
-
-            </button>
-
+                <span className="inline-flex w-5 h-5 rounded-full bg-cyan-100 text-cyan-700 items-center justify-center mr-1 font-extrabold">
+                  {letter}
+                </span>
+                {text}
+              </button>
+            ))}
           </div>
-
-
-          {/* =================================================
-              QUESTION 5 ANIMATION
-          ================================================= */}
 
           <div className="mt-auto pt-2 text-center">
-
-            {answers.q5 === "C" && (
+            {answers.q5 === "B" && (
               <div className="animate-bounce">
-
-                <div className="text-2xl">
-                  🤩
-                </div>
-
-                <p
-                  className="
-                    text-[10px]
-                    font-extrabold
-                    text-emerald-600
-                  "
-                >
+                <div className="text-2xl">🤩</div>
+                <p className="text-[10px] font-extrabold text-emerald-600">
                   Correct! 🎉
                 </p>
-
               </div>
             )}
-
-            {answers.q5 && answers.q5 !== "C" && (
+            {answers.q5 && answers.q5 !== "B" && (
               <div className="animate-pulse">
-
-                <div className="text-2xl">
-                  😟
-                </div>
-
-                <p
-                  className="
-                    text-[10px]
-                    font-extrabold
-                    text-red-600
-                  "
-                >
-                  No, it's wrong!
+                <div className="text-2xl">😟</div>
+                <p className="text-[10px] font-extrabold text-red-600">
+                  Noo, it's wrong!
                 </p>
-
               </div>
             )}
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }
 
+
 function Page10ElectronicsCover() {
   return (
-    <div
-      className="
-        h-full
-        w-full
-        relative
-        overflow-hidden
-        bg-gradient-to-br
-        from-blue-950
-        via-blue-800
-        to-indigo-950
-        flex
-        items-center
-        justify-center
-      "
-    >
+    <div className="h-full w-full relative overflow-hidden bg-gradient-to-br from-blue-950 via-indigo-900 to-slate-950 flex items-center justify-center">
 
       {/* BACKGROUND GLOW */}
+      <div className="absolute w-[420px] h-[420px] rounded-full bg-cyan-400/20 blur-[100px]" />
+      <div className="absolute -top-20 -right-20 w-[260px] h-[260px] rounded-full bg-blue-400/20 blur-[80px]" />
+      <div className="absolute -bottom-20 -left-20 w-[280px] h-[280px] rounded-full bg-indigo-400/20 blur-[80px]" />
 
-      <div
-        className="
-          absolute
-          w-[420px]
-          h-[420px]
-          rounded-full
-          bg-cyan-400/20
-          blur-[100px]
-        "
-      />
+      {/* CIRCUIT LINES */}
+      <div className="absolute top-[18%] left-0 w-[30%] h-px bg-cyan-300/50" />
+      <div className="absolute top-[18%] right-0 w-[30%] h-px bg-cyan-300/50" />
+      <div className="absolute bottom-[18%] left-0 w-[25%] h-px bg-blue-300/40" />
+      <div className="absolute bottom-[18%] right-0 w-[25%] h-px bg-blue-300/40" />
 
-      <div
-        className="
-          absolute
-          -top-20
-          -right-20
-          w-[260px]
-          h-[260px]
-          rounded-full
-          bg-blue-400/20
-          blur-[80px]
-        "
-      />
+      {/* COVER */}
+      <div className="relative z-10 w-[84%] h-[84%] rounded-3xl border border-cyan-300/30 bg-white/10 backdrop-blur-md shadow-[0_25px_80px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center text-center px-8">
 
-      <div
-        className="
-          absolute
-          -bottom-20
-          -left-20
-          w-[280px]
-          h-[280px]
-          rounded-full
-          bg-indigo-400/20
-          blur-[80px]
-        "
-      />
-
-
-      {/* DECORATIVE CIRCUIT LINES */}
-
-      <div
-        className="
-          absolute
-          top-[18%]
-          left-0
-          w-[30%]
-          h-px
-          bg-cyan-300/40
-        "
-      />
-
-      <div
-        className="
-          absolute
-          top-[18%]
-          right-0
-          w-[30%]
-          h-px
-          bg-cyan-300/40
-        "
-      />
-
-      <div
-        className="
-          absolute
-          bottom-[18%]
-          left-0
-          w-[25%]
-          h-px
-          bg-blue-300/30
-        "
-      />
-
-      <div
-        className="
-          absolute
-          bottom-[18%]
-          right-0
-          w-[25%]
-          h-px
-          bg-blue-300/30
-        "
-      />
-
-
-      {/* MAIN COVER */}
-
-      <div
-        className="
-          relative
-          z-10
-          w-[82%]
-          h-[82%]
-          rounded-3xl
-          border
-          border-cyan-300/30
-          bg-white/10
-          backdrop-blur-xl
-          shadow-[0_25px_80px_rgba(0,0,0,0.35)]
-          flex
-          flex-col
-          items-center
-          justify-center
-          text-center
-          px-8
-        "
-      >
-
-        {/* ELECTRON ICON */}
-
-        <div
-          className="
-            w-24
-            h-24
-            rounded-full
-            bg-white
-            shadow-[0_0_45px_rgba(34,211,238,0.55)]
-            flex
-            items-center
-            justify-center
-            text-5xl
-            mb-7
-            animate-pulse
-          "
-        >
+        <div className="w-24 h-24 rounded-full bg-white/15 border-2 border-cyan-300/40 flex items-center justify-center text-5xl shadow-[0_0_45px_rgba(34,211,238,0.35)] animate-pulse mb-7">
           ⚡
         </div>
 
-
-        {/* SMALL LABEL */}
-
-        <p
-          className="
-            text-cyan-200
-            text-xs
-            font-extrabold
-            uppercase
-            tracking-[0.35em]
-            mb-4
-          "
-        >
+        <p className="text-cyan-200 text-xs font-extrabold uppercase tracking-[0.35em] mb-4">
           Next Chapter
         </p>
 
-
-        {/* TITLE */}
-
-        <h1
-          className="
-            text-5xl
-            font-black
-            text-white
-            leading-tight
-          "
-        >
+        <h1 className="text-5xl font-black text-white leading-tight">
           Electronics
         </h1>
 
+        <div className="mt-4 w-20 h-1 rounded-full bg-cyan-400" />
 
-        {/* SUBTITLE */}
-
-        <p
-          className="
-            mt-4
-            text-blue-100
-            text-sm
-            font-semibold
-            max-w-[360px]
-            leading-relaxed
-          "
-        >
-          Discover circuits, components,
-          current, voltage and how electronic
-          devices work.
+        <p className="mt-5 text-blue-100 text-sm font-semibold max-w-[380px] leading-relaxed">
+          Explore electronic components, circuits, current, voltage and how electronic devices work together.
         </p>
 
-
-        {/* COMPONENT ROW */}
-
-        <div
-          className="
-            mt-8
-            flex
-            items-center
-            gap-5
-            text-3xl
-          "
-        >
-          <div
-            className="
-              w-14
-              h-14
-              rounded-xl
-              bg-white/10
-              border
-              border-white/20
-              flex
-              items-center
-              justify-center
-            "
-          >
+        <div className="mt-8 flex items-center gap-5">
+          <div className="w-14 h-14 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-3xl">
             🔋
           </div>
-
-          <span className="text-cyan-300 text-xl">
-            →
-          </span>
-
-          <div
-            className="
-              w-14
-              h-14
-              rounded-xl
-              bg-white/10
-              border
-              border-white/20
-              flex
-              items-center
-              justify-center
-            "
-          >
+          <span className="text-cyan-300 text-2xl">→</span>
+          <div className="w-14 h-14 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-3xl">
             🔘
           </div>
-
-          <span className="text-cyan-300 text-xl">
-            →
-          </span>
-
-          <div
-            className="
-              w-14
-              h-14
-              rounded-xl
-              bg-white/10
-              border
-              border-white/20
-              flex
-              items-center
-              justify-center
-            "
-          >
+          <span className="text-cyan-300 text-2xl">→</span>
+          <div className="w-14 h-14 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-3xl">
             💡
           </div>
         </div>
 
-
-        {/* FOOTER */}
-
-        <div
-          className="
-            absolute
-            bottom-6
-            left-0
-            right-0
-            text-center
-          "
-        >
-          <p
-            className="
-              text-cyan-200/70
-              text-[10px]
-              font-bold
-              uppercase
-              tracking-[0.25em]
-            "
-          >
-            MEG-Zcuit • Interactive Electronics
-          </p>
-        </div>
-
+        <p className="absolute bottom-6 text-white/50 text-[9px] font-bold uppercase tracking-[0.25em]">
+          MEG-Zcuit • Interactive Electronics
+        </p>
       </div>
-
     </div>
   );
 }
+

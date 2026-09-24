@@ -6,7 +6,13 @@ import React, {
   useState,
 } from "react";
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 type ComponentId = "battery" | "switch" | "led";
+
+type PaletteId = ComponentId | "wire";
 
 type PortId =
   | "battery-positive"
@@ -16,46 +22,52 @@ type PortId =
   | "led-input"
   | "led-output";
 
-type PortSide =
-  | "left"
-  | "right"
-  | "top"
-  | "bottom";
-
-type PortConfig = {
-  label: string;
-  side: PortSide;
-};
-
-type ComponentState = {
-  id: ComponentId;
-  x: number;
-  y: number;
-};
-
-type Wire = {
-  id: string;
-  from: PortId;
-  to: PortId;
-};
+type PortSide = "left" | "right" | "top" | "bottom";
 
 type Point = {
   x: number;
   y: number;
 };
 
+type ComponentState = {
+  id: ComponentId;
+  instanceId: string;
+  x: number;
+  y: number;
+};
+
+type Wire = {
+  id: string;
+
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+
+  startPort?: PortId;
+  endPort?: PortId;
+};
+
+/* =========================================================
+   CONSTANTS
+========================================================= */
+
 const COMPONENT_WIDTH = 104;
 const COMPONENT_HEIGHT = 88;
+
+
 
 /* =========================================================
    PORT CONFIGURATION
 ========================================================= */
 
-const PORTS: Record<PortId, PortConfig> = {
-  /* -------------------------
-     BATTERY
-  ------------------------- */
-
+const PORTS: Record<
+  PortId,
+  {
+    label: string;
+    side: PortSide;
+  }
+> = {
   "battery-positive": {
     label: "+",
     side: "top",
@@ -66,10 +78,6 @@ const PORTS: Record<PortId, PortConfig> = {
     side: "bottom",
   },
 
-  /* -------------------------
-     SWITCH
-  ------------------------- */
-
   "switch-input": {
     label: "IN",
     side: "left",
@@ -79,10 +87,6 @@ const PORTS: Record<PortId, PortConfig> = {
     label: "OUT",
     side: "right",
   },
-
-  /* -------------------------
-     LED
-  ------------------------- */
 
   "led-input": {
     label: "IN",
@@ -114,30 +118,6 @@ const PORT_OWNER: Record<
 };
 
 /* =========================================================
-   INITIAL COMPONENT POSITIONS
-========================================================= */
-
-const INITIAL_COMPONENTS: ComponentState[] = [
-  {
-    id: "battery",
-    x: 55,
-    y: 70,
-  },
-
-  {
-    id: "switch",
-    x: 250,
-    y: 145,
-  },
-
-  {
-    id: "led",
-    x: 445,
-    y: 70,
-  },
-];
-
-/* =========================================================
    HELPERS
 ========================================================= */
 
@@ -147,76 +127,11 @@ function getPortOwner(
   return PORT_OWNER[portId];
 }
 
-function getPortPosition(
-  component: ComponentState,
-  portId: PortId
-): Point {
-  const port = PORTS[portId];
-
-  /* -------------------------
-     TOP
-  ------------------------- */
-
-  if (port.side === "top") {
-    return {
-      x:
-        component.x +
-        COMPONENT_WIDTH / 2,
-
-      y: component.y,
-    };
-  }
-
-  /* -------------------------
-     BOTTOM
-  ------------------------- */
-
-  if (port.side === "bottom") {
-    return {
-      x:
-        component.x +
-        COMPONENT_WIDTH / 2,
-
-      y:
-        component.y +
-        COMPONENT_HEIGHT,
-    };
-  }
-
-  /* -------------------------
-     LEFT / RIGHT
-  ------------------------- */
-
-  return {
-    x:
-      port.side === "left"
-        ? component.x
-        : component.x +
-          COMPONENT_WIDTH,
-
-    y:
-      component.y +
-      COMPONENT_HEIGHT / 2,
-  };
-}
-
-function hasConnection(
-  wires: Wire[],
-  first: PortId,
-  second: PortId
-) {
-  return wires.some(
-    (wire) =>
-      (wire.from === first &&
-        wire.to === second) ||
-      (wire.from === second &&
-        wire.to === first)
-  );
-}
-
-function createWireId() {
+function createId(prefix: string) {
   return (
-    Date.now().toString() +
+    prefix +
+    "-" +
+    Date.now().toString(36) +
     "-" +
     Math.random()
       .toString(36)
@@ -236,6 +151,85 @@ function clamp(
 }
 
 /* =========================================================
+   PORT POSITION
+========================================================= */
+
+function getPortPosition(
+  component: ComponentState,
+  portId: PortId
+): Point {
+  const port = PORTS[portId];
+
+  if (port.side === "top") {
+    return {
+      x:
+        component.x +
+        COMPONENT_WIDTH / 2,
+
+      y: component.y,
+    };
+  }
+
+  if (port.side === "bottom") {
+    return {
+      x:
+        component.x +
+        COMPONENT_WIDTH / 2,
+
+      y:
+        component.y +
+        COMPONENT_HEIGHT,
+    };
+  }
+
+  if (port.side === "left") {
+    return {
+      x: component.x,
+      y:
+        component.y +
+        COMPONENT_HEIGHT / 2,
+    };
+  }
+
+  return {
+    x:
+      component.x +
+      COMPONENT_WIDTH,
+
+    y:
+      component.y +
+      COMPONENT_HEIGHT / 2,
+  };
+}
+
+/* =========================================================
+   COMPONENT PORTS
+========================================================= */
+
+function getPortsForComponent(
+  componentId: ComponentId
+): PortId[] {
+  if (componentId === "battery") {
+    return [
+      "battery-positive",
+      "battery-negative",
+    ];
+  }
+
+  if (componentId === "switch") {
+    return [
+      "switch-input",
+      "switch-output",
+    ];
+  }
+
+  return [
+    "led-input",
+    "led-output",
+  ];
+}
+
+/* =========================================================
    MAIN COMPONENT
 ========================================================= */
 
@@ -246,13 +240,11 @@ export default function CircuitBuilder() {
     );
 
   /* =======================================================
-     COMPONENT STATE
+     COMPONENTS
   ======================================================= */
 
   const [components, setComponents] =
-    useState<ComponentState[]>(
-      INITIAL_COMPONENTS
-    );
+    useState<ComponentState[]>([]);
 
   /* =======================================================
      WIRES
@@ -260,43 +252,6 @@ export default function CircuitBuilder() {
 
   const [wires, setWires] =
     useState<Wire[]>([]);
-
-  /* =======================================================
-     COMPONENT DRAG
-  ======================================================= */
-
-  const [
-    draggingComponent,
-    setDraggingComponent,
-  ] = useState<ComponentId | null>(
-    null
-  );
-
-  const [
-    componentOffset,
-    setComponentOffset,
-  ] = useState<Point>({
-    x: 0,
-    y: 0,
-  });
-
-  /* =======================================================
-     WIRE DRAG
-  ======================================================= */
-
-  const [
-    connectingFrom,
-    setConnectingFrom,
-  ] = useState<PortId | null>(
-    null
-  );
-
-  const [
-    mousePoint,
-    setMousePoint,
-  ] = useState<Point | null>(
-    null
-  );
 
   /* =======================================================
      SWITCH
@@ -322,16 +277,46 @@ export default function CircuitBuilder() {
 
   const [boardSize, setBoardSize] =
     useState({
-      width: 650,
-      height: 330,
+      width: 700,
+      height: 400,
     });
 
   /* =======================================================
-     UPDATE BOARD SIZE
+     COMPONENT DRAG
+  ======================================================= */
+
+  const [
+    draggingComponent,
+    setDraggingComponent,
+  ] =
+    useState<string | null>(null);
+
+  const [
+    componentOffset,
+    setComponentOffset,
+  ] = useState<Point>({
+    x: 0,
+    y: 0,
+  });
+
+  /* =======================================================
+     WIRE END DRAG
+  ======================================================= */
+
+  const [
+    draggingWireEnd,
+    setDraggingWireEnd,
+  ] = useState<{
+    wireId: string;
+    end: "start" | "end";
+  } | null>(null);
+
+  /* =======================================================
+     BOARD SIZE UPDATE
   ======================================================= */
 
   useEffect(() => {
-    const updateBoardSize = () => {
+    const updateSize = () => {
       if (!boardRef.current) {
         return;
       }
@@ -345,12 +330,10 @@ export default function CircuitBuilder() {
       });
     };
 
-    updateBoardSize();
+    updateSize();
 
     const observer =
-      new ResizeObserver(
-        updateBoardSize
-      );
+      new ResizeObserver(updateSize);
 
     if (boardRef.current) {
       observer.observe(
@@ -360,7 +343,7 @@ export default function CircuitBuilder() {
 
     window.addEventListener(
       "resize",
-      updateBoardSize
+      updateSize
     );
 
     return () => {
@@ -368,7 +351,7 @@ export default function CircuitBuilder() {
 
       window.removeEventListener(
         "resize",
-        updateBoardSize
+        updateSize
       );
     };
   }, []);
@@ -385,6 +368,10 @@ export default function CircuitBuilder() {
 
     components.forEach(
       (component) => {
+        /*
+         * Only one of each component type
+         * is needed for this circuit builder.
+         */
         map.set(
           component.id,
           component
@@ -396,7 +383,7 @@ export default function CircuitBuilder() {
   }, [components]);
 
   /* =======================================================
-     GET ABSOLUTE PORT POSITION
+     ABSOLUTE PORT POSITION
   ======================================================= */
 
   const getAbsolutePortPosition =
@@ -423,7 +410,44 @@ export default function CircuitBuilder() {
     );
 
   /* =======================================================
-     START COMPONENT DRAG
+     BOARD POINT
+  ======================================================= */
+
+  const getBoardPoint =
+    useCallback(
+      (
+        event:
+          | React.PointerEvent
+          | React.DragEvent
+      ): Point | null => {
+        const board =
+          boardRef.current?.getBoundingClientRect();
+
+        if (!board) {
+          return null;
+        }
+
+        return {
+          x: clamp(
+            event.clientX -
+              board.left,
+            0,
+            board.width
+          ),
+
+          y: clamp(
+            event.clientY -
+              board.top,
+            0,
+            board.height
+          ),
+        };
+      },
+      []
+    );
+
+  /* =======================================================
+     DRAG COMPONENT
   ======================================================= */
 
   const startComponentDrag =
@@ -432,10 +456,6 @@ export default function CircuitBuilder() {
         event: React.PointerEvent,
         component: ComponentState
       ) => {
-        if (connectingFrom) {
-          return;
-        }
-
         event.preventDefault();
         event.stopPropagation();
 
@@ -447,7 +467,7 @@ export default function CircuitBuilder() {
         }
 
         setDraggingComponent(
-          component.id
+          component.instanceId
         );
 
         setComponentOffset({
@@ -469,10 +489,10 @@ export default function CircuitBuilder() {
             event.pointerId
           );
         } catch {
-          // Ignore pointer capture errors
+          //
         }
       },
-      [connectingFrom]
+      []
     );
 
   /* =======================================================
@@ -517,28 +537,26 @@ export default function CircuitBuilder() {
             COMPONENT_HEIGHT
         );
 
-        const newX = clamp(
-          rawX,
-          0,
-          maxX
-        );
-
-        const newY = clamp(
-          rawY,
-          0,
-          maxY
-        );
-
         setComponents(
           (previous) =>
             previous.map(
               (component) =>
-                component.id ===
+                component.instanceId ===
                 draggingComponent
                   ? {
                       ...component,
-                      x: newX,
-                      y: newY,
+
+                      x: clamp(
+                        rawX,
+                        0,
+                        maxX
+                      ),
+
+                      y: clamp(
+                        rawY,
+                        0,
+                        maxY
+                      ),
                     }
                   : component
             )
@@ -561,91 +579,155 @@ export default function CircuitBuilder() {
     }, []);
 
   /* =======================================================
-     START WIRE
+     PALETTE DRAG START
   ======================================================= */
 
-  const startWire = useCallback(
-    (
-      event: React.PointerEvent,
-      portId: PortId
-    ) => {
-      event.preventDefault();
-      event.stopPropagation();
+  const startPaletteDrag = (
+    event: React.DragEvent,
+    paletteId: PaletteId
+  ) => {
+    event.dataTransfer.setData(
+      "palette-id",
+      paletteId
+    );
 
-      const board =
-        boardRef.current?.getBoundingClientRect();
+    event.dataTransfer.effectAllowed =
+      "copy";
+  };
 
-      if (!board) {
-        return;
-      }
+  /* =======================================================
+     BOARD DROP
+  ======================================================= */
 
-      const start =
-        getAbsolutePortPosition(
-          portId
+  const handleBoardDrop = (
+    event: React.DragEvent
+  ) => {
+    event.preventDefault();
+
+    const paletteId =
+      event.dataTransfer.getData(
+        "palette-id"
+      ) as PaletteId;
+
+    if (!paletteId) {
+      return;
+    }
+
+    const point =
+      getBoardPoint(event);
+
+    if (!point) {
+      return;
+    }
+
+    /* ---------------------------------------
+       COMPONENT DROP
+    --------------------------------------- */
+
+    if (
+      paletteId === "battery" ||
+      paletteId === "switch" ||
+      paletteId === "led"
+    ) {
+      const alreadyPlaced =
+        components.some(
+          (component) =>
+            component.id ===
+            paletteId
         );
 
-      if (!start) {
+      if (alreadyPlaced) {
         return;
       }
 
-      setDraggingComponent(
-        null
+      const x = clamp(
+        point.x -
+          COMPONENT_WIDTH / 2,
+        0,
+        boardSize.width -
+          COMPONENT_WIDTH
       );
 
-      setConnectingFrom(
-        portId
+      const y = clamp(
+        point.y -
+          COMPONENT_HEIGHT / 2,
+        0,
+        boardSize.height -
+          COMPONENT_HEIGHT
       );
 
-      setMousePoint({
-        x:
-          event.clientX -
-          board.left,
+      setComponents(
+        (previous) => [
+          ...previous,
 
-        y:
-          event.clientY -
-          board.top,
-      });
-    },
-    [getAbsolutePortPosition]
-  );
+          {
+            id: paletteId,
+
+            instanceId:
+              createId(paletteId),
+
+            x,
+            y,
+          },
+        ]
+      );
+
+      setSimulationState(
+        "idle"
+      );
+
+      return;
+    }
+
+    /* ---------------------------------------
+       WIRE DROP
+    --------------------------------------- */
+
+    if (paletteId === "wire") {
+      const wireWidth = 150;
+
+      const x1 = clamp(
+        point.x -
+          wireWidth / 2,
+        10,
+        boardSize.width - 10
+      );
+
+      const y1 = clamp(
+        point.y,
+        10,
+        boardSize.height - 10
+      );
+
+      const x2 = clamp(
+        x1 + wireWidth,
+        10,
+        boardSize.width - 10
+      );
+
+      setWires(
+        (previous) => [
+          ...previous,
+
+          {
+            id: createId("wire"),
+
+            x1,
+            y1,
+
+            x2,
+            y2: y1,
+          },
+        ]
+      );
+    }
+  };
 
   /* =======================================================
-     MOVE WIRE
+     FIND PORT UNDER POINTER
   ======================================================= */
 
-  const moveWire = useCallback(
-    (
-      event: React.PointerEvent
-    ) => {
-      if (!connectingFrom) {
-        return;
-      }
-
-      const board =
-        boardRef.current?.getBoundingClientRect();
-
-      if (!board) {
-        return;
-      }
-
-      setMousePoint({
-        x:
-          event.clientX -
-          board.left,
-
-        y:
-          event.clientY -
-          board.top,
-      });
-    },
-    [connectingFrom]
-  );
-
-  /* =======================================================
-     FIND TERMINAL
-  ======================================================= */
-
-  const findTerminal =
+  const findPortAtPointer =
     useCallback(
       (
         event: React.PointerEvent
@@ -656,166 +738,282 @@ export default function CircuitBuilder() {
             event.clientY
           );
 
-        const terminal =
+        const port =
           element?.closest(
             "[data-port-id]"
           ) as HTMLElement | null;
 
-        if (!terminal) {
+        if (!port) {
           return null;
         }
 
-        const portId =
-          terminal.dataset.portId;
-
         return (
-          portId as PortId
-        );
+          port.dataset.portId as
+            | PortId
+            | undefined
+        ) ?? null;
       },
       []
     );
 
   /* =======================================================
-     FINISH WIRE
+     START WIRE END DRAG
   ======================================================= */
 
-  const finishWire = useCallback(
-    (
-      event: React.PointerEvent
-    ) => {
-      if (!connectingFrom) {
-        return;
-      }
+  const startWireEndDrag = (
+    event: React.PointerEvent,
+    wireId: string,
+    end: "start" | "end"
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
 
-      event.preventDefault();
-      event.stopPropagation();
+    setDraggingWireEnd({
+      wireId,
+      end,
+    });
 
-      const targetPort =
-        findTerminal(event);
+    try {
+      (
+        event.currentTarget as HTMLElement
+      ).setPointerCapture(
+        event.pointerId
+      );
+    } catch {
+      //
+    }
+  };
 
-      if (
-        targetPort &&
-        targetPort !== connectingFrom
-      ) {
-        const firstOwner =
-          getPortOwner(
-            connectingFrom
-          );
+  /* =======================================================
+     MOVE WIRE END
+  ======================================================= */
 
-        const secondOwner =
-          getPortOwner(
-            targetPort
-          );
+  const moveWireEnd =
+    useCallback(
+      (
+        event: React.PointerEvent
+      ) => {
+        if (!draggingWireEnd) {
+          return;
+        }
 
-        /* Prevent connecting a component
-           to itself */
+        const point =
+          getBoardPoint(event);
 
-        if (
-          firstOwner !==
-          secondOwner
-        ) {
-          const alreadyExists =
-            hasConnection(
-              wires,
-              connectingFrom,
-              targetPort
+        if (!point) {
+          return;
+        }
+
+        setWires(
+          (previous) =>
+            previous.map(
+              (wire) => {
+                if (
+                  wire.id !==
+                  draggingWireEnd.wireId
+                ) {
+                  return wire;
+                }
+
+                if (
+                  draggingWireEnd.end ===
+                  "start"
+                ) {
+                  return {
+                    ...wire,
+
+                    x1: point.x,
+                    y1: point.y,
+
+                    startPort:
+                      undefined,
+                  };
+                }
+
+                return {
+                  ...wire,
+
+                  x2: point.x,
+                  y2: point.y,
+
+                  endPort:
+                    undefined,
+                };
+              }
+            )
+        );
+      },
+      [
+        draggingWireEnd,
+        getBoardPoint,
+      ]
+    );
+
+  /* =======================================================
+     STOP WIRE END DRAG
+  ======================================================= */
+
+  const stopWireEndDrag =
+    useCallback(
+      (
+        event: React.PointerEvent
+      ) => {
+        if (!draggingWireEnd) {
+          return;
+        }
+
+        const port =
+          findPortAtPointer(event);
+
+        if (port) {
+          const position =
+            getAbsolutePortPosition(
+              port
             );
 
-          if (!alreadyExists) {
+          if (position) {
             setWires(
-              (previous) => [
-                ...previous,
-                {
-                  id: createWireId(),
-                  from: connectingFrom,
-                  to: targetPort,
-                },
-              ]
+              (previous) =>
+                previous.map(
+                  (wire) => {
+                    if (
+                      wire.id !==
+                      draggingWireEnd.wireId
+                    ) {
+                      return wire;
+                    }
+
+                    if (
+                      draggingWireEnd.end ===
+                      "start"
+                    ) {
+                      return {
+                        ...wire,
+
+                        x1: position.x,
+                        y1: position.y,
+
+                        startPort: port,
+                      };
+                    }
+
+                    return {
+                      ...wire,
+
+                      x2: position.x,
+                      y2: position.y,
+
+                      endPort: port,
+                    };
+                  }
+                )
             );
           }
         }
-      }
 
-      setConnectingFrom(
-        null
-      );
+        setDraggingWireEnd(null);
 
-      setMousePoint(null);
-    },
-    [
-      connectingFrom,
-      findTerminal,
-      wires,
-    ]
-  );
+        setSimulationState(
+          "idle"
+        );
+      },
+      [
+        draggingWireEnd,
+        findPortAtPointer,
+        getAbsolutePortPosition,
+      ]
+    );
 
   /* =======================================================
-     CANCEL WIRE
+     KEEP CONNECTED WIRES WITH COMPONENT
   ======================================================= */
 
-  const cancelWire =
-    useCallback(() => {
-      setConnectingFrom(null);
-      setMousePoint(null);
-    }, []);
+  useEffect(() => {
+    setWires(
+      (previous) =>
+        previous.map((wire) => {
+          let updated = {
+            ...wire,
+          };
+
+          if (wire.startPort) {
+            const position =
+              getAbsolutePortPosition(
+                wire.startPort
+              );
+
+            if (position) {
+              updated.x1 =
+                position.x;
+
+              updated.y1 =
+                position.y;
+            }
+          }
+
+          if (wire.endPort) {
+            const position =
+              getAbsolutePortPosition(
+                wire.endPort
+              );
+
+            if (position) {
+              updated.x2 =
+                position.x;
+
+              updated.y2 =
+                position.y;
+            }
+          }
+
+          return updated;
+        })
+    );
+  }, [
+    components,
+    getAbsolutePortPosition,
+  ]);
 
   /* =======================================================
      DELETE WIRE
   ======================================================= */
 
-  const deleteWire = useCallback(
-    (
-      event: React.PointerEvent,
-      wireId: string
-    ) => {
-      event.preventDefault();
-      event.stopPropagation();
+  const deleteWire = (
+    event: React.PointerEvent,
+    wireId: string
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
 
-      if (connectingFrom) {
-        return;
-      }
+    setWires(
+      (previous) =>
+        previous.filter(
+          (wire) =>
+            wire.id !== wireId
+        )
+    );
 
-      setWires(
-        (previous) =>
-          previous.filter(
-            (wire) =>
-              wire.id !== wireId
-          )
-      );
-
-      setSimulationState(
-        "idle"
-      );
-    },
-    [connectingFrom]
-  );
+    setSimulationState(
+      "idle"
+    );
+  };
 
   /* =======================================================
-     RESET
+     CHECK CONNECTION
   ======================================================= */
 
-  const resetCircuit =
-    useCallback(() => {
-      setComponents(
-        INITIAL_COMPONENTS.map(
-          (component) => ({
-            ...component,
-          })
-        )
-      );
-
-      setWires([]);
-
-      setSwitchOn(false);
-
-      setConnectingFrom(null);
-
-      setMousePoint(null);
-
-      setSimulationState(
-        "idle"
-      );
-    }, []);
+  const hasConnection = (
+    first: PortId,
+    second: PortId
+  ) => {
+    return wires.some(
+      (wire) =>
+        (wire.startPort === first &&
+          wire.endPort === second) ||
+        (wire.startPort === second &&
+          wire.endPort === first)
+    );
+  };
 
   /* =======================================================
      SIMULATE
@@ -823,42 +1021,40 @@ export default function CircuitBuilder() {
 
   const simulateCircuit =
     useCallback(() => {
-      /*
-       Correct circuit:
-
-       Battery +
-            ↓
-       Switch IN
-       Switch OUT
-            ↓
-        LED IN
-        LED OUT
-            ↓
-       Battery −
-      */
-
       const batteryToSwitch =
         hasConnection(
-          wires,
           "battery-positive",
           "switch-input"
         );
 
       const switchToLed =
         hasConnection(
-          wires,
           "switch-output",
           "led-input"
         );
 
       const ledToBattery =
         hasConnection(
-          wires,
           "led-output",
           "battery-negative"
         );
 
+      const allComponentsPlaced =
+        components.some(
+          (c) =>
+            c.id === "battery"
+        ) &&
+        components.some(
+          (c) =>
+            c.id === "switch"
+        ) &&
+        components.some(
+          (c) =>
+            c.id === "led"
+        );
+
       const correct =
+        allComponentsPlaced &&
         batteryToSwitch &&
         switchToLed &&
         ledToBattery &&
@@ -873,163 +1069,36 @@ export default function CircuitBuilder() {
           "wrong"
         );
       }
-    }, [wires, switchOn]);
+    }, [
+      wires,
+      components,
+      switchOn,
+    ]);
 
   /* =======================================================
-     RENDER WIRES
+     RESET
   ======================================================= */
 
-  const renderedWires =
-    wires.map((wire) => {
-      const start =
-        getAbsolutePortPosition(
-          wire.from
-        );
+  const resetCircuit =
+    useCallback(() => {
+      setComponents([]);
 
-      const end =
-        getAbsolutePortPosition(
-          wire.to
-        );
+      setWires([]);
 
-      if (!start || !end) {
-        return null;
-      }
+      setSwitchOn(false);
 
-      const isCorrectWire =
-        (wire.from ===
-          "battery-positive" &&
-          wire.to ===
-            "switch-input") ||
-        (wire.from ===
-          "switch-input" &&
-          wire.to ===
-            "battery-positive") ||
-
-        (wire.from ===
-          "switch-output" &&
-          wire.to ===
-            "led-input") ||
-        (wire.from ===
-          "led-input" &&
-          wire.to ===
-            "switch-output") ||
-
-        (wire.from ===
-          "led-output" &&
-          wire.to ===
-            "battery-negative") ||
-        (wire.from ===
-          "battery-negative" &&
-          wire.to ===
-            "led-output");
-
-      const isCurrentFlow =
-        simulationState ===
-          "success" &&
-        isCorrectWire &&
-        switchOn;
-
-      return (
-        <g key={wire.id}>
-          {/* Main wire */}
-
-          <line
-            x1={start.x}
-            y1={start.y}
-            x2={end.x}
-            y2={end.y}
-            stroke={
-              isCurrentFlow
-                ? "#22c55e"
-                : "#64748b"
-            }
-            strokeWidth={4}
-            strokeLinecap="round"
-            className={
-              isCurrentFlow
-                ? "current-wire"
-                : ""
-            }
-          />
-
-          {/* Invisible clickable wire */}
-
-          <line
-            x1={start.x}
-            y1={start.y}
-            x2={end.x}
-            y2={end.y}
-            stroke="transparent"
-            strokeWidth={16}
-            strokeLinecap="round"
-            style={{
-              pointerEvents:
-                "stroke",
-              cursor: "pointer",
-            }}
-            onPointerDown={(
-              event
-            ) =>
-              deleteWire(
-                event,
-                wire.id
-              )
-            }
-          />
-
-          {/* Moving current */}
-
-          {isCurrentFlow && (
-            <circle
-              r="5"
-              fill="#facc15"
-            >
-              <animateMotion
-                dur="0.9s"
-                repeatCount="indefinite"
-                path={`
-                  M ${start.x} ${start.y}
-                  L ${end.x} ${end.y}
-                `}
-              />
-            </circle>
-          )}
-        </g>
+      setSimulationState(
+        "idle"
       );
-    });
 
-  /* =======================================================
-     TEMPORARY WIRE
-  ======================================================= */
+      setDraggingComponent(
+        null
+      );
 
-  const temporaryWire =
-    connectingFrom &&
-    mousePoint
-      ? (() => {
-          const start =
-            getAbsolutePortPosition(
-              connectingFrom
-            );
-
-          if (!start) {
-            return null;
-          }
-
-          return (
-            <line
-              x1={start.x}
-              y1={start.y}
-              x2={mousePoint.x}
-              y2={mousePoint.y}
-              stroke="#2563eb"
-              strokeWidth={3}
-              strokeDasharray="8 6"
-              strokeLinecap="round"
-              opacity={0.85}
-            />
-          );
-        })()
-      : null;
+      setDraggingWireEnd(
+        null
+      );
+    }, []);
 
   /* =======================================================
      RENDER COMPONENT
@@ -1050,20 +1119,10 @@ export default function CircuitBuilder() {
       component.id ===
       "led";
 
-    const floatClass =
-      isBattery
-        ? "component-float"
-        : isSwitch
-          ? "component-float component-float-delay"
-          : "component-float component-float-delay-2";
-
     return (
       <div
-        key={component.id}
-        className="
-          absolute
-          select-none
-        "
+        key={component.instanceId}
+        className="absolute select-none"
         style={{
           left: component.x,
           top: component.y,
@@ -1076,16 +1135,15 @@ export default function CircuitBuilder() {
 
           zIndex:
             draggingComponent ===
-            component.id
+            component.instanceId
               ? 30
               : 10,
 
           cursor:
-            connectingFrom
-              ? "default"
-              : "grab",
+            "grab",
 
-          touchAction: "none",
+          touchAction:
+            "none",
         }}
         onPointerDown={(
           event
@@ -1106,25 +1164,23 @@ export default function CircuitBuilder() {
         }
       >
         <div
-          className={`
-            ${floatClass}
+          className="
+            component-float
             w-full
             h-full
             rounded-2xl
             bg-white
             border
             border-slate-200
-            shadow-md
+            shadow-lg
             flex
             flex-col
             items-center
             justify-center
             relative
-          `}
+          "
         >
-          {/* =================================================
-              BATTERY
-          ================================================= */}
+          {/* BATTERY */}
 
           {isBattery && (
             <>
@@ -1132,22 +1188,18 @@ export default function CircuitBuilder() {
                 🔋
               </div>
 
-              <div
-                className="
-                  mt-1
-                  text-[10px]
-                  font-bold
-                  text-slate-600
-                "
-              >
+              <div className="
+                mt-1
+                text-[10px]
+                font-bold
+                text-slate-600
+              ">
                 Battery
               </div>
             </>
           )}
 
-          {/* =================================================
-              SWITCH
-          ================================================= */}
+          {/* SWITCH */}
 
           {isSwitch && (
             <>
@@ -1155,14 +1207,12 @@ export default function CircuitBuilder() {
                 🔘
               </div>
 
-              <div
-                className="
-                  mt-1
-                  text-[10px]
-                  font-bold
-                  text-slate-600
-                "
-              >
+              <div className="
+                mt-1
+                text-[10px]
+                font-bold
+                text-slate-600
+              ">
                 Switch
               </div>
 
@@ -1170,8 +1220,8 @@ export default function CircuitBuilder() {
                 type="button"
                 className={`
                   mt-1
-                  px-2
-                  py-0.5
+                  px-3
+                  py-1
                   rounded-full
                   text-[9px]
                   font-bold
@@ -1210,9 +1260,7 @@ export default function CircuitBuilder() {
             </>
           )}
 
-          {/* =================================================
-              LED
-          ================================================= */}
+          {/* LED */}
 
           {isLed && (
             <>
@@ -1229,112 +1277,230 @@ export default function CircuitBuilder() {
                 </span>
               </div>
 
-              <div
-                className="
-                  mt-1
-                  text-[10px]
-                  font-bold
-                  text-slate-600
-                "
-              >
+              <div className="
+                mt-1
+                text-[10px]
+                font-bold
+                text-slate-600
+              ">
                 LED
               </div>
             </>
           )}
 
-          {/* =================================================
-              BATTERY + — TOP
-          ================================================= */}
+          {/* PORTS */}
 
-          {isBattery && (
-            <PortButton
-              portId="battery-positive"
-              label="+"
-              position="top"
-              onStartWire={
-                startWire
-              }
-            />
-          )}
+          {getPortsForComponent(
+            component.id
+          ).map(
+            (portId) => {
+              const port =
+                PORTS[portId];
 
-          {/* =================================================
-              BATTERY − — BOTTOM
-          ================================================= */}
-
-          {isBattery && (
-            <PortButton
-              portId="battery-negative"
-              label="−"
-              position="bottom"
-              onStartWire={
-                startWire
-              }
-            />
-          )}
-
-          {/* =================================================
-              SWITCH IN — LEFT
-          ================================================= */}
-
-          {isSwitch && (
-            <PortButton
-              portId="switch-input"
-              label="IN"
-              position="left"
-              onStartWire={
-                startWire
-              }
-            />
-          )}
-
-          {/* =================================================
-              SWITCH OUT — RIGHT
-          ================================================= */}
-
-          {isSwitch && (
-            <PortButton
-              portId="switch-output"
-              label="OUT"
-              position="right"
-              onStartWire={
-                startWire
-              }
-            />
-          )}
-
-          {/* =================================================
-              LED IN — TOP
-          ================================================= */}
-
-          {isLed && (
-            <PortButton
-              portId="led-input"
-              label="IN"
-              position="top"
-              onStartWire={
-                startWire
-              }
-            />
-          )}
-
-          {/* =================================================
-              LED OUT — BOTTOM
-          ================================================= */}
-
-          {isLed && (
-            <PortButton
-              portId="led-output"
-              label="OUT"
-              position="bottom"
-              onStartWire={
-                startWire
-              }
-            />
+              return (
+                <PortButton
+                  key={portId}
+                  portId={portId}
+                  label={
+                    port.label
+                  }
+                  position={
+                    port.side
+                  }
+                />
+              );
+            }
           )}
         </div>
       </div>
     );
   };
+
+  /* =======================================================
+     RENDER WIRES
+  ======================================================= */
+
+  const renderedWires =
+    wires.map((wire) => {
+      const start =
+        wire.startPort
+          ? getAbsolutePortPosition(
+              wire.startPort
+            )
+          : {
+              x: wire.x1,
+              y: wire.y1,
+            };
+
+      const end =
+        wire.endPort
+          ? getAbsolutePortPosition(
+              wire.endPort
+            )
+          : {
+              x: wire.x2,
+              y: wire.y2,
+            };
+
+      if (!start || !end) {
+        return null;
+      }
+
+      const isCorrectWire =
+        (wire.startPort ===
+          "battery-positive" &&
+          wire.endPort ===
+            "switch-input") ||
+        (wire.startPort ===
+          "switch-input" &&
+          wire.endPort ===
+            "battery-positive") ||
+
+        (wire.startPort ===
+          "switch-output" &&
+          wire.endPort ===
+            "led-input") ||
+        (wire.startPort ===
+          "led-input" &&
+          wire.endPort ===
+            "switch-output") ||
+
+        (wire.startPort ===
+          "led-output" &&
+          wire.endPort ===
+            "battery-negative") ||
+        (wire.startPort ===
+          "battery-negative" &&
+          wire.endPort ===
+            "led-output");
+
+      const currentFlow =
+        simulationState ===
+          "success" &&
+        isCorrectWire &&
+        switchOn;
+
+      return (
+        <g key={wire.id}>
+          {/* MAIN WIRE */}
+
+          <line
+            x1={start.x}
+            y1={start.y}
+            x2={end.x}
+            y2={end.y}
+            stroke={
+              currentFlow
+                ? "#22c55e"
+                : "#64748b"
+            }
+            strokeWidth={4}
+            strokeLinecap="round"
+            className={
+              currentFlow
+                ? "current-wire"
+                : ""
+            }
+          />
+
+          {/* CLICK TO DELETE */}
+
+          <line
+            x1={start.x}
+            y1={start.y}
+            x2={end.x}
+            y2={end.y}
+            stroke="transparent"
+            strokeWidth={16}
+            strokeLinecap="round"
+            style={{
+              pointerEvents:
+                "stroke",
+              cursor:
+                "pointer",
+            }}
+            onPointerDown={(
+              event
+            ) =>
+              deleteWire(
+                event,
+                wire.id
+              )
+            }
+          />
+
+          {/* START HANDLE */}
+
+          <circle
+            cx={start.x}
+            cy={start.y}
+            r={7}
+            fill="#2563eb"
+            stroke="white"
+            strokeWidth={3}
+            style={{
+              cursor:
+                "grab",
+              pointerEvents:
+                "auto",
+            }}
+            onPointerDown={(
+              event
+            ) =>
+              startWireEndDrag(
+                event,
+                wire.id,
+                "start"
+              )
+            }
+          />
+
+          {/* END HANDLE */}
+
+          <circle
+            cx={end.x}
+            cy={end.y}
+            r={7}
+            fill="#2563eb"
+            stroke="white"
+            strokeWidth={3}
+            style={{
+              cursor:
+                "grab",
+              pointerEvents:
+                "auto",
+            }}
+            onPointerDown={(
+              event
+            ) =>
+              startWireEndDrag(
+                event,
+                wire.id,
+                "end"
+              )
+            }
+          />
+
+          {/* CURRENT FLOW */}
+
+          {currentFlow && (
+            <circle
+              r="5"
+              fill="#facc15"
+            >
+              <animateMotion
+                dur="0.9s"
+                repeatCount="indefinite"
+                path={`
+                  M ${start.x} ${start.y}
+                  L ${end.x} ${end.y}
+                `}
+              />
+            </circle>
+          )}
+        </g>
+      );
+    });
 
   /* =======================================================
      RETURN
@@ -1345,67 +1511,242 @@ export default function CircuitBuilder() {
       className="
         w-full
         h-full
+        min-h-0
         flex
         flex-col
         gap-2
-        min-h-0
+        overflow-hidden
       "
     >
-      {/* =====================================================
-          STATUS
-      ===================================================== */}
+
+      {/* ===================================================
+    COMPONENT LIBRARY
+=================================================== */}
+
+<div
+  className="
+    shrink-0
+
+    rounded-2xl
+
+    border-2
+    border-slate-200
+
+    bg-slate-50
+
+    shadow-sm
+
+    px-3
+    py-2
+  "
+>
+  {/* HEADER */}
+
+  <div
+    className="
+      flex
+      items-center
+      justify-between
+
+      mb-2
+    "
+  >
+    <div>
+      <div
+        className="
+          text-xs
+          font-extrabold
+          text-slate-800
+        "
+      >
+        Component Library
+      </div>
 
       <div
         className="
-          shrink-0
-          flex
-          items-center
-          justify-between
-          gap-2
+          text-[9px]
+          text-slate-400
+          mt-0.5
         "
       >
-        <div
-          className={`
-            px-3
-            py-1.5
-            rounded-xl
-            text-xs
-            font-semibold
+        Drag a component into the circuit area
+      </div>
+    </div>
 
-            ${
-              simulationState ===
-              "success"
-                ? "bg-green-100 text-green-700"
-                : simulationState ===
-                    "wrong"
-                  ? "bg-red-100 text-red-700"
-                  : "bg-white text-slate-600 border border-slate-200"
-            }
-          `}
-        >
-          {simulationState ===
-          "success"
-            ? "🤩 Awesome! Circuit is complete."
-            : simulationState ===
-                "wrong"
-              ? "😕 Almost there! Check the connections and switch."
-              : "Connect the terminals to form a circuit."}
-        </div>
+    <div
+      className="
+        px-2
+        py-0.5
 
-        <div
-          className="
-            text-[10px]
-            text-slate-500
-            font-medium
-          "
-        >
-          Click a wire to delete
-        </div>
+        rounded-full
+
+        bg-blue-50
+        border
+        border-blue-100
+
+        text-[8px]
+        font-bold
+        text-blue-600
+      "
+    >
+      Drag & Drop
+    </div>
+  </div>
+
+  {/* COMPONENT SLOTS */}
+
+  <div
+    className="
+      grid
+      grid-cols-4
+      gap-2
+      w-full
+    "
+  >
+    {/* BATTERY SLOT */}
+
+    <div
+      className="
+        min-w-0
+
+        rounded-2xl
+
+        border
+        border-dashed
+        border-slate-300
+
+        bg-white
+
+        p-1
+
+        flex
+        justify-center
+        min-h-0
+      "
+    >
+      <PaletteItem
+        id="battery"
+        emoji="🔋"
+        title="Battery"
+        onDragStart={
+          startPaletteDrag
+        }
+      />
+    </div>
+
+    {/* SWITCH SLOT */}
+
+    <div
+      className="
+        min-w-0
+
+        rounded-2xl
+
+        border
+        border-dashed
+        border-slate-300
+
+        bg-white
+
+        p-1
+
+        flex
+        justify-center
+        min-h-0
+      "
+    >
+      <PaletteItem
+        id="switch"
+        emoji="🔘"
+        title="Switch"
+        onDragStart={
+          startPaletteDrag
+        }
+      />
+    </div>
+
+    {/* LED SLOT */}
+
+    <div
+      className="
+        min-w-0
+
+        rounded-2xl
+
+        border
+        border-dashed
+        border-slate-300
+
+        bg-white
+
+        p-1
+
+        flex
+        justify-center
+        min-h-0
+      "
+    >
+      <PaletteItem
+        id="led"
+        emoji="💡"
+        title="LED"
+        onDragStart={
+          startPaletteDrag
+        }
+      />
+    </div>
+
+    {/* WIRE SLOT */}
+
+    <div
+      className="
+        min-w-0
+
+        rounded-2xl
+
+        border
+        border-dashed
+        border-slate-300
+
+        bg-white
+
+        p-1
+
+        flex
+        justify-center
+        min-h-0
+      "
+    >
+      <PaletteItem
+        id="wire"
+        emoji="🔌"
+        title="Wire"
+        onDragStart={
+          startPaletteDrag
+        }
+      />
+    </div>
+  </div>
+</div>
+
+      {/* ===================================================
+          INSTRUCTION
+      =================================================== */}
+
+      <div className="
+        shrink-0
+        text-center
+        text-[9px]
+        text-slate-500
+        font-medium
+        leading-none
+      ">
+        Drag components into the circuit area. Drag wire ends to connect the terminals.
       </div>
 
-      {/* =====================================================
+      {/* ===================================================
           CIRCUIT FRAME
-      ===================================================== */}
+      =================================================== */}
 
       <div
         ref={boardRef}
@@ -1415,25 +1756,87 @@ export default function CircuitBuilder() {
           min-h-0
           overflow-hidden
           rounded-2xl
-          border
+          border-2
           border-slate-300
           bg-white
           circuit-grid
           shadow-inner
         "
-        onPointerMove={
-          moveWire
+        onDragOver={(
+          event
+        ) => {
+          event.preventDefault();
+
+          event.dataTransfer.dropEffect =
+            "copy";
+        }}
+        onDrop={
+          handleBoardDrop
         }
-        onPointerUp={
-          finishWire
-        }
-        onPointerCancel={
-          cancelWire
-        }
+        onPointerMove={(
+          event
+        ) => {
+          moveComponent(event);
+          moveWireEnd(event);
+        }}
+        onPointerUp={(
+          event
+        ) => {
+          stopComponentDrag();
+          stopWireEndDrag(event);
+        }}
+        onPointerCancel={(
+          event
+        ) => {
+          stopComponentDrag();
+          stopWireEndDrag(event);
+        }}
       >
-        {/* ===================================================
+
+        {/* EMPTY BOARD MESSAGE */}
+
+        {components.length ===
+          0 &&
+          wires.length === 0 && (
+            <div className="
+              absolute
+              inset-0
+              flex
+              items-center
+              justify-center
+              pointer-events-none
+            ">
+              <div className="
+                text-center
+                text-slate-400
+              ">
+                <div className="
+                  text-4xl
+                  mb-2
+                ">
+                  ⚡
+                </div>
+
+                <div className="
+                  text-sm
+                  font-bold
+                ">
+                  Drop components here
+                </div>
+
+                <div className="
+                  text-xs
+                  mt-1
+                ">
+                  Build your own circuit
+                </div>
+              </div>
+            </div>
+          )}
+
+        {/* =================================================
             SVG WIRE LAYER
-        =================================================== */}
+        ================================================= */}
 
         <svg
           className="
@@ -1451,157 +1854,136 @@ export default function CircuitBuilder() {
           }}
         >
           {renderedWires}
-
-          {temporaryWire}
         </svg>
 
-        {/* ===================================================
+        {/* =================================================
             COMPONENT LAYER
-        =================================================== */}
+        ================================================= */}
 
         {components.map(
           renderComponent
         )}
 
-        {/* ===================================================
-            SUCCESS CHARACTER
-        =================================================== */}
+        {/* =================================================
+            SUCCESS
+        ================================================= */}
 
         {simulationState ===
           "success" && (
-          <div
-            className="
-              absolute
-              left-1/2
-              bottom-3
-              -translate-x-1/2
-              z-40
-              flex
-              items-center
-              gap-2
-              px-3
-              py-1.5
-              rounded-xl
-              bg-white/95
-              border
-              border-green-200
-              shadow-sm
-            "
-          >
-            <div
-              className="
-                text-3xl
-                joy-character
-              "
-            >
+          <div className="
+            absolute
+            left-1/2
+            bottom-4
+            -translate-x-1/2
+            z-40
+            flex
+            items-center
+            gap-2
+            px-4
+            py-1.5
+            rounded-xl
+            bg-white/95
+            border
+            border-green-200
+            shadow-md
+          ">
+            <div className="
+              text-3xl
+              joy-character
+            ">
               🤩
             </div>
 
             <div>
-              <div
-                className="
-                  text-sm
-                  font-extrabold
-                  text-green-700
-                "
-              >
+              <div className="
+                text-sm
+                font-extrabold
+                text-green-700
+              ">
                 Awesome!
               </div>
 
-              <div
-                className="
-                  text-[10px]
-                  text-slate-500
-                "
-              >
+              <div className="
+                text-[10px]
+                text-slate-500
+              ">
                 The LED is glowing.
               </div>
             </div>
 
-            <div
-              className="
-                text-lg
-                joy-stars
-              "
-            >
+            <div className="
+              text-lg
+              joy-stars
+            ">
               ✨
             </div>
           </div>
         )}
 
-        {/* ===================================================
-            WRONG CHARACTER
-        =================================================== */}
+        {/* =================================================
+            WRONG
+        ================================================= */}
 
         {simulationState ===
           "wrong" && (
-          <div
-            className="
-              absolute
-              left-1/2
-              bottom-3
-              -translate-x-1/2
-              z-40
-              flex
-              items-center
-              gap-2
-              px-3
-              py-1.5
-              rounded-xl
-              bg-white/95
-              border
-              border-red-200
-              shadow-sm
-            "
-          >
-            <div
-              className="
-                text-3xl
-                confused-character
-              "
-            >
+          <div className="
+            absolute
+            left-1/2
+            bottom-4
+            -translate-x-1/2
+            z-40
+            flex
+            items-center
+            gap-2
+            px-4
+            py-1.5
+            rounded-xl
+            bg-white/95
+            border
+            border-red-200
+            shadow-md
+          ">
+            <div className="
+              text-3xl
+              confused-character
+            ">
               😕
             </div>
 
             <div>
-              <div
-                className="
-                  text-sm
-                  font-extrabold
-                  text-red-600
-                "
-              >
+              <div className="
+                text-sm
+                font-extrabold
+                text-red-600
+              ">
                 Almost there!
               </div>
 
-              <div
-                className="
-                  text-[10px]
-                  text-slate-500
-                "
-              >
+              <div className="
+                text-[10px]
+                text-slate-500
+              ">
                 Check your circuit
                 connections.
               </div>
             </div>
           </div>
         )}
+
       </div>
 
-      {/* =====================================================
+      {/* ===================================================
           BUTTONS
-      ===================================================== */}
+      =================================================== */}
 
-      <div
-        className="
-          shrink-0
-          flex
-          items-center
-          justify-center
-          gap-2
-          pt-1
-        "
-      >
+      <div className="
+        shrink-0
+        flex
+        items-center
+        justify-center
+        gap-2
+      ">
+
         <button
           type="button"
           onClick={
@@ -1609,7 +1991,7 @@ export default function CircuitBuilder() {
           }
           className="
             px-4
-            py-2
+            py-1.5
             rounded-xl
             bg-blue-600
             hover:bg-blue-700
@@ -1630,7 +2012,7 @@ export default function CircuitBuilder() {
           }
           className="
             px-4
-            py-2
+            py-1.5
             rounded-xl
             bg-white
             hover:bg-slate-50
@@ -1645,23 +2027,125 @@ export default function CircuitBuilder() {
         >
           ↻ Reset
         </button>
+
       </div>
 
-      {/* =====================================================
-          INSTRUCTION
-      ===================================================== */}
+      {/* ===================================================
+          CONNECTION GUIDE
+      =================================================== */}
+
+      <div className="
+        shrink-0
+        text-center
+        text-[10px]
+        text-slate-400
+        font-medium
+        pb-1
+      ">
+        🔋 + → 🔘 IN → 🔘 OUT → 💡 IN → 💡 OUT → 🔋 −
+      </div>
+
+    </div>
+  );
+}
+
+/* =========================================================
+   COMPONENT LIBRARY ITEM
+========================================================= */
+
+type PaletteItemProps = {
+  id: PaletteId;
+  emoji: string;
+  title: string;
+
+  onDragStart: (
+    event: React.DragEvent,
+    id: PaletteId
+  ) => void;
+};
+
+function PaletteItem({
+  id,
+  emoji,
+  title,
+  onDragStart,
+}: PaletteItemProps) {
+  return (
+    <div
+      draggable={true}
+      onDragStart={(event) =>
+        onDragStart(event, id)
+      }
+      className="
+        w-[88px]
+        h-[58px]
+
+        shrink-0
+
+        rounded-2xl
+
+        border-2
+        border-slate-200
+
+        bg-white
+
+        shadow-sm
+
+        flex
+        flex-col
+        items-center
+        justify-center
+
+        select-none
+
+        cursor-grab
+
+        transition-all
+        duration-200
+
+        hover:-translate-y-1
+        hover:border-blue-300
+        hover:shadow-lg
+
+        active:cursor-grabbing
+        active:scale-95
+      "
+    >
+      {/* EMOJI */}
 
       <div
         className="
-          shrink-0
-          text-center
-          text-[10px]
-          text-slate-400
-          font-medium
-          pb-1
+          text-2xl
+          leading-none
+          component-float
         "
       >
-        Connect: 🔋 + → 🔘 IN → 🔘 OUT → 💡 IN → 💡 OUT → 🔋 −
+        {emoji}
+      </div>
+
+      {/* NAME */}
+
+      <div
+        className="
+          mt-1
+          text-[9px]
+          font-extrabold
+          text-slate-600
+        "
+      >
+        {title}
+      </div>
+
+      {/* DRAG LABEL */}
+
+      <div
+        className="
+          text-[7px]
+          text-slate-400
+          mt-0
+        "
+      >
+        Drag to board
       </div>
     </div>
   );
@@ -1673,59 +2157,31 @@ export default function CircuitBuilder() {
 
 type PortButtonProps = {
   portId: PortId;
-
   label: string;
-
-  position:
-    | "left"
-    | "right"
-    | "top"
-    | "bottom";
-
-  onStartWire: (
-    event: React.PointerEvent,
-    portId: PortId
-  ) => void;
+  position: PortSide;
 };
 
 function PortButton({
   portId,
   label,
   position,
-  onStartWire,
 }: PortButtonProps) {
   let positionClass = "";
-
-  /* -------------------------
-     LEFT
-  ------------------------- */
 
   if (position === "left") {
     positionClass =
       "left-[-15px] top-1/2 -translate-y-1/2";
   }
 
-  /* -------------------------
-     RIGHT
-  ------------------------- */
-
   if (position === "right") {
     positionClass =
       "right-[-15px] top-1/2 -translate-y-1/2";
   }
 
-  /* -------------------------
-     TOP
-  ------------------------- */
-
   if (position === "top") {
     positionClass =
       "top-[-15px] left-1/2 -translate-x-1/2";
   }
-
-  /* -------------------------
-     BOTTOM
-  ------------------------- */
 
   if (position === "bottom") {
     positionClass =
@@ -1733,16 +2189,11 @@ function PortButton({
   }
 
   return (
-    <button
-      type="button"
-      data-port-id={
-        portId
-      }
-      aria-label={`Connect ${label}`}
+    <div
+      data-port-id={portId}
       className={`
         absolute
         ${positionClass}
-
         z-50
 
         w-[28px]
@@ -1764,28 +2215,15 @@ function PortButton({
         font-extrabold
         text-white
 
+        transition
         hover:scale-110
         hover:bg-blue-600
 
-        active:scale-95
-
-        transition
-
-        touch-none
+        cursor-crosshair
       `}
-      onPointerDown={(
-        event
-      ) => {
-        event.preventDefault();
-        event.stopPropagation();
-
-        onStartWire(
-          event,
-          portId
-        );
-      }}
+      title={`Connect ${label}`}
     >
       {label}
-    </button>
+    </div>
   );
 }
