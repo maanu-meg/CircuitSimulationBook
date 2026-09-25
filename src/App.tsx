@@ -10,8 +10,6 @@ import CircuitSimulator from "./CircuitSimulator";
 import VoltageCurrentSimulator from "./VoltageCurrentSimulator";
 import CircuitBuilder from "./CircuitBuilder";
 import HTMLFlipBook from "react-pageflip";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 
 import { Button } from "./components/ui/button";
 
@@ -29,7 +27,7 @@ import {
   Clock,
 } from "lucide-react";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 
 
 type ComponentType =
@@ -310,12 +308,6 @@ function ForumBook() {
   const [currentPage, setCurrentPage] =
     useState(0);
 
-  const [isGeneratingPDF, setIsGeneratingPDF] =
-    useState(false);
-
-  const pdfPagesRef =
-    useRef<HTMLDivElement>(null);
-
 
   /* =======================================================
      CHECK DETAILS
@@ -363,22 +355,22 @@ function ForumBook() {
   const pages = [
 
     /* 0 - COVER */
-    <div className="h-full w-full bg-white" />,
+    <div key="page-0" className="h-full w-full bg-white" />,
 
     /* 1 - THE PROBLEM */
-    <Page1RiyaStory />,
+    <Page1TheProblem />,
 
     /* 2 - THE DISCOVERY */
-    <Page2GoogleSearch />,
+    <Page2TheDiscovery />,
 
     /* 3 - HOW IT WORKS — KEEP EXISTING PAGE 3 */
     <Page3HowItWorks />,
 
     /* 4 - VOLTAGE & CURRENT */
-    <Page4GoogleSearchTwo />,
+    <Page4VoltageAndCurrent />,
 
     /* 5 - ELECTRONICS INTRODUCTION */
-    <Page5Animation />,
+    <Page5ElectronicsInAction />,
 
     /* 6 - WHAT IS ELECTRONICS? */
     <Page6WhatIsElectronics />,
@@ -387,16 +379,16 @@ function ForumBook() {
     <Page7WhatIsCircuit />,
 
     /* 8 - HOW A CIRCUIT WORKS */
-    <Page8HowCircuitWorks />,
+    <Page8HowACircuitWorks />,
 
     /* 9 - HOW TO FORM A SIMPLE CIRCUIT — 5 STEPS */
-    <Page9SimpleCircuit />,
+    <Page9HowToFormASimpleCircuit />,
 
     /* 10 - FORM A CIRCUIT — CIRCUIT BUILDER */
-    <Page10CircuitBuilder />,
+    <Page10FormACircuitCircuitBuilder />,
 
     /* 11 - COMPONENTS */
-    <Page11Components
+    <Page11ExploringElectronicComponents
       onSelectComponent={(component) => {
         setSelectedComponent(component);
 
@@ -409,18 +401,18 @@ function ForumBook() {
     />,
 
     /* 12 - COMPONENT WORKING */
-    <Page12componentFlowVideo
+    <Page12ComponentWorkingMethod
       selectedComponent={selectedComponent}
     />,
 
     /* 13 - FINAL RECAP */
-    <Page13Recap />,
+    <Page13FinalRecap />,
 
     /* 14 - QUICK QUIZ 1–3 */
-    <Page14QuizOne />,
+    <Page14QuickQuizOne />,
 
     /* 15 - QUICK QUIZ 4–5 */
-    <Page15QuizTwo />,
+    <Page15QuickQuizTwo />,
 
   ];
 
@@ -468,94 +460,6 @@ function ForumBook() {
   /* =======================================================
      PREVIOUS
   ======================================================= */
-
-  /* =======================================================
-     DOWNLOAD COMPLETE BOOK AS ONE PDF
-  ======================================================= */
-
-  const downloadPDF = async () => {
-
-    if (isGeneratingPDF) {
-      return;
-    }
-
-    setIsGeneratingPDF(true);
-
-    try {
-
-      const pdfPages =
-        pdfPagesRef.current?.querySelectorAll<HTMLElement>(
-          "[data-pdf-page]"
-        );
-
-      if (!pdfPages || pdfPages.length === 0) {
-        console.error("PDF pages were not found.");
-        return;
-      }
-
-      // Keep the same 560 × 700 aspect ratio as the ebook page.
-      const pdfWidth = 210;
-      const pdfHeight = 262.5;
-
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: [pdfWidth, pdfHeight],
-        compress: true,
-      });
-
-      for (let i = 0; i < pdfPages.length; i++) {
-
-        const page = pdfPages[i];
-
-        const canvas = await html2canvas(page, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: false,
-          backgroundColor: "#ffffff",
-          logging: false,
-          width: 560,
-          height: 700,
-          windowWidth: 560,
-          windowHeight: 700,
-        });
-
-        const imageData =
-          canvas.toDataURL("image/jpeg", 0.95);
-
-        if (i > 0) {
-          pdf.addPage([pdfWidth, pdfHeight], "portrait");
-        }
-
-        pdf.addImage(
-          imageData,
-          "JPEG",
-          0,
-          0,
-          pdfWidth,
-          pdfHeight,
-          undefined,
-          "FAST"
-        );
-      }
-
-      pdf.save("MEG-Zcuit.pdf");
-
-    } catch (error) {
-
-      console.error(
-        "PDF generation failed:",
-        error
-      );
-
-    } finally {
-
-      setIsGeneratingPDF(false);
-
-    }
-
-  };
-
 
   const previousPage = () => {
 
@@ -687,23 +591,6 @@ function ForumBook() {
             Next →
           </Button>
 
-
-          <Button
-            onClick={downloadPDF}
-            disabled={isGeneratingPDF}
-            className="
-              rounded-full
-              bg-emerald-600
-              text-white
-              hover:bg-emerald-700
-              disabled:opacity-60
-            "
-          >
-            {isGeneratingPDF
-              ? "Creating PDF..."
-              : "⬇ Download PDF"}
-          </Button>
-
         </div>
 
 
@@ -783,37 +670,6 @@ function ForumBook() {
             )}
 
           </HTMLFlipBook>
-
-          {/* =================================================
-              HIDDEN PDF PAGES
-              These are only used when creating the PDF.
-              The visible flipbook above is unchanged.
-          ================================================= */}
-
-          <div
-            ref={pdfPagesRef}
-            className="
-              fixed
-              left-[-10000px]
-              top-0
-              pointer-events-none
-            "
-            aria-hidden="true"
-          >
-            {pages.map((page, index) => (
-              <div
-                key={`pdf-page-${index}`}
-                data-pdf-page
-                className="bg-white overflow-hidden"
-                style={{
-                  width: "560px",
-                  height: "700px",
-                }}
-              >
-                {page}
-              </div>
-            ))}
-          </div>
 
         </div>
 
@@ -1752,7 +1608,7 @@ function ForumBook() {
    PAGE 1
 ========================================================= */
 
-function Page1RiyaStory() {
+function Page1TheProblem() {
 
   return (
 
@@ -1871,7 +1727,7 @@ function Page1RiyaStory() {
    PAGE 2
 ========================================================= */
 
-function Page2GoogleSearch() {
+function Page2TheDiscovery() {
 
   const [
     selectedSearch,
@@ -2730,7 +2586,7 @@ function Page3HowItWorks() {
    PAGE 4
 ========================================================= */
 
-function Page4GoogleSearchTwo() {
+function Page4VoltageAndCurrent() {
 
   return (
 
@@ -2815,7 +2671,7 @@ function Page4GoogleSearchTwo() {
    PAGE 5
 ========================================================= */
 
-function Page5Animation() {
+function Page5ElectronicsInAction() {
   return (
     <div className="h-full flex flex-col p-8 bg-slate-50 overflow-hidden">
       <div className="flex items-center gap-3 mb-4 shrink-0">
@@ -2860,47 +2716,436 @@ function Page5Animation() {
    NEW PAGE 6 - WHAT IS ELECTRONICS?
 ========================================================= */
 function Page6WhatIsElectronics() {
+  const [isDark, setIsDark] = useState(false);
+
   return (
-    <div className="h-full flex flex-col p-7 bg-white overflow-hidden">
-      <div className="flex items-center gap-3 mb-4 shrink-0">
-        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">6</div>
-        <div>
-          <h2 className="text-2xl font-extrabold text-slate-900">💡 What is Electronics?</h2>
-          <p className="text-xs text-slate-500 font-medium mt-1">Using electrical components to control and process electrical signals.</p>
-        </div>
-      </div>
-
-      <div className="flex-1 min-h-0 flex flex-col justify-center gap-5">
-        <div className="rounded-2xl bg-slate-50 border border-slate-200 p-5 text-center">
-          <p className="text-slate-700 font-medium leading-relaxed">
-            Electronics uses electrical components to control or process electrical signals.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3 items-center">
-          <div className="rounded-2xl bg-blue-50 border border-blue-100 p-5 text-center">
-            <div className="text-3xl mb-2">📥</div>
-            <h3 className="font-extrabold text-slate-800">INPUT</h3>
-            <p className="text-xs text-slate-500 mt-1">A signal or information enters.</p>
+    <div className="h-full w-full bg-slate-50 p-5 overflow-hidden">
+      {/* OUTER FRAME */}
+      <div
+        className="
+          h-full w-full
+          rounded-3xl
+          border-2 border-blue-200
+          bg-white
+          shadow-lg
+          p-4
+          flex flex-col
+          overflow-hidden
+        "
+      >
+        {/* HEADER */}
+        <div className="flex items-center gap-3 shrink-0 mb-3">
+          <div
+            className="
+              w-8 h-8 rounded-full bg-blue-600
+              text-white flex items-center justify-center
+              font-bold text-sm shrink-0
+            "
+          >
+            6
           </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-500 mb-1">→</div>
-            <div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-5">
-              <div className="text-3xl mb-2">⚙️</div>
-              <h3 className="font-extrabold text-slate-800">CONTROL / PROCESS</h3>
-              <p className="text-xs text-slate-500 mt-1">The circuit processes the signal.</p>
+
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900">
+              💡 What is Electronics?
+            </h2>
+
+            <p className="text-xs text-slate-500 font-medium">
+              Let's understand electronics with simple examples!
+            </p>
+          </div>
+        </div>
+
+        {/* CONTENT */}
+        <div
+          className="
+            flex-1 min-h-0
+            grid grid-rows-[auto_auto_auto_1fr]
+            gap-2.5
+            overflow-hidden
+          "
+        >
+          {/* WHAT IS ELECTRONICS */}
+          <div
+            className="
+              rounded-2xl
+              border border-blue-100
+              bg-blue-50
+              px-4 py-3
+            "
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xl">🌟</span>
+
+              <h3 className="text-sm font-extrabold text-slate-900">
+                What is Electronics?
+              </h3>
             </div>
-            <div className="text-2xl font-bold text-blue-500 mt-1">→</div>
-          </div>
-          <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-5 text-center">
-            <div className="text-3xl mb-2">📤</div>
-            <h3 className="font-extrabold text-slate-800">OUTPUT</h3>
-            <p className="text-xs text-slate-500 mt-1">The result is produced.</p>
-          </div>
-        </div>
 
-        <div className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-center text-sm font-bold text-slate-700">
-          Example: an automatic night light detects darkness → processes the signal → switches the LED on.
+            <p className="text-xs text-slate-700 font-medium leading-relaxed">
+              Electronics uses electrical components to control electricity
+              and make useful devices work.
+            </p>
+          </div>
+
+          {/* ELECTRONICS AROUND US */}
+          <div
+            className="
+              rounded-2xl
+              border border-slate-200
+              bg-white
+              px-4 py-3
+            "
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl">🔍</span>
+
+              <h3 className="text-sm font-extrabold text-slate-900">
+                Electronics Around Us
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
+              <div className="h-[58px] rounded-xl bg-blue-50 border border-blue-100 flex flex-col items-center justify-center">
+                <span className="text-2xl">📱</span>
+                <span className="text-[10px] font-extrabold text-slate-700">
+                  Mobile
+                </span>
+              </div>
+
+              <div className="h-[58px] rounded-xl bg-yellow-50 border border-yellow-100 flex flex-col items-center justify-center">
+                <span className="text-2xl">💡</span>
+                <span className="text-[10px] font-extrabold text-slate-700">
+                  Smart Light
+                </span>
+              </div>
+
+              <div className="h-[58px] rounded-xl bg-purple-50 border border-purple-100 flex flex-col items-center justify-center">
+                <span className="text-2xl">🎧</span>
+                <span className="text-[10px] font-extrabold text-slate-700">
+                  Earphones
+                </span>
+              </div>
+
+              <div className="h-[58px] rounded-xl bg-emerald-50 border border-emerald-100 flex flex-col items-center justify-center">
+                <span className="text-2xl">🔔</span>
+                <span className="text-[10px] font-extrabold text-slate-700">
+                  Doorbell
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* HOW ELECTRONICS WORK */}
+          <div
+            className="
+              rounded-2xl
+              border border-indigo-100
+              bg-indigo-50
+              px-4 py-3
+            "
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl">⚙️</span>
+
+              <h3 className="text-sm font-extrabold text-slate-900">
+                How Does Electronics Work?
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
+              <div className="h-[58px] rounded-xl bg-white border border-blue-200 flex flex-col items-center justify-center">
+                <span className="text-xl">📥</span>
+                <span className="text-[10px] font-extrabold text-blue-700">
+                  INPUT
+                </span>
+                <span className="text-[9px] text-slate-500">
+                  Sensor
+                </span>
+              </div>
+
+              <span className="text-lg font-bold text-blue-500">
+                →
+              </span>
+
+              <div className="h-[58px] rounded-xl bg-white border border-indigo-200 flex flex-col items-center justify-center">
+                <span className="text-xl">⚙️</span>
+                <span className="text-[10px] font-extrabold text-indigo-700">
+                  PROCESS
+                </span>
+                <span className="text-[9px] text-slate-500">
+                  Circuit
+                </span>
+              </div>
+
+              <span className="text-lg font-bold text-indigo-500">
+                →
+              </span>
+
+              <div className="h-[58px] rounded-xl bg-white border border-emerald-200 flex flex-col items-center justify-center">
+                <span className="text-xl">📤</span>
+                <span className="text-[10px] font-extrabold text-emerald-700">
+                  OUTPUT
+                </span>
+                <span className="text-[9px] text-slate-500">
+                  Light
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* REAL-TIME NIGHT LIGHT SIMULATION */}
+          <div
+            className={`
+              min-h-0
+              rounded-2xl
+              border-2
+              ${
+                isDark
+                  ? "border-indigo-300 bg-indigo-50"
+                  : "border-amber-200 bg-amber-50"
+              }
+              px-4 py-3
+              flex flex-col
+              overflow-hidden
+              transition-colors duration-300
+            `}
+          >
+            {/* TITLE */}
+            <div className="flex items-center justify-between gap-2 shrink-0 mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">
+                  {isDark ? "🌙" : "☀️"}
+                </span>
+
+                <h3 className="text-sm font-extrabold text-slate-900">
+                  Automatic Night Light
+                </h3>
+              </div>
+
+              <span
+                className={`
+                  px-2 py-1 rounded-full
+                  text-[9px] font-extrabold
+                  ${
+                    isDark
+                      ? "bg-indigo-100 text-indigo-700"
+                      : "bg-amber-100 text-amber-700"
+                  }
+                `}
+              >
+                REAL-TIME
+              </span>
+            </div>
+
+            {/* DAY / NIGHT BUTTONS */}
+            <div className="flex justify-center gap-2 shrink-0 mb-2">
+              <button
+                type="button"
+                onClick={() => setIsDark(false)}
+                className={`
+                  px-4 py-1.5
+                  rounded-lg
+                  text-xs font-extrabold
+                  border
+                  transition-all
+                  ${
+                    !isDark
+                      ? "bg-amber-400 text-white border-amber-400 shadow-md"
+                      : "bg-white text-slate-600 border-slate-200"
+                  }
+                `}
+              >
+                ☀️ DAY
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsDark(true)}
+                className={`
+                  px-4 py-1.5
+                  rounded-lg
+                  text-xs font-extrabold
+                  border
+                  transition-all
+                  ${
+                    isDark
+                      ? "bg-indigo-600 text-white border-indigo-600 shadow-md"
+                      : "bg-white text-slate-600 border-slate-200"
+                  }
+                `}
+              >
+                🌙 NIGHT
+              </button>
+            </div>
+
+            {/* SIMULATION FLOW */}
+            <div
+              className="
+                flex-1 min-h-0
+                flex items-center justify-center
+              "
+            >
+              <div className="w-full grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
+
+                {/* ENVIRONMENT */}
+                <div
+                  className={`
+                    h-[70px]
+                    rounded-xl
+                    border
+                    bg-white
+                    flex flex-col
+                    items-center justify-center
+                    transition-all duration-300
+                    ${
+                      isDark
+                        ? "border-indigo-300 shadow-md"
+                        : "border-amber-200"
+                    }
+                  `}
+                >
+                  <span className="text-2xl">
+                    {isDark ? "🌙" : "☀️"}
+                  </span>
+
+                  <span className="text-[10px] font-extrabold text-slate-700">
+                    {isDark ? "DARK" : "BRIGHT"}
+                  </span>
+                </div>
+
+                <span
+                  className={`
+                    text-lg font-bold
+                    transition-colors
+                    ${
+                      isDark
+                        ? "text-indigo-500"
+                        : "text-slate-300"
+                    }
+                  `}
+                >
+                  →
+                </span>
+
+                {/* SENSOR */}
+                <div
+                  className={`
+                    h-[70px]
+                    rounded-xl
+                    border
+                    bg-white
+                    flex flex-col
+                    items-center justify-center
+                    transition-all duration-300
+                    ${
+                      isDark
+                        ? "border-indigo-300 shadow-md"
+                        : "border-slate-200"
+                    }
+                  `}
+                >
+                  <span className="text-2xl">
+                    🔍
+                  </span>
+
+                  <span className="text-[10px] font-extrabold text-slate-700">
+                    SENSOR
+                  </span>
+
+                  <span className="text-[9px] text-slate-500">
+                    {isDark ? "Dark detected" : "Light detected"}
+                  </span>
+                </div>
+
+                <span
+                  className={`
+                    text-lg font-bold
+                    transition-colors
+                    ${
+                      isDark
+                        ? "text-indigo-500"
+                        : "text-slate-300"
+                    }
+                  `}
+                >
+                  →
+                </span>
+
+                {/* CIRCUIT + LED */}
+                <div
+                  className={`
+                    h-[70px]
+                    rounded-xl
+                    border
+                    bg-white
+                    flex flex-col
+                    items-center justify-center
+                    transition-all duration-300
+                    ${
+                      isDark
+                        ? "border-yellow-300 shadow-md"
+                        : "border-slate-200"
+                    }
+                  `}
+                >
+                  <span
+                    className={`
+                      text-2xl
+                      transition-all duration-300
+                      ${
+                        isDark
+                          ? "drop-shadow-[0_0_10px_rgba(250,204,21,0.9)] scale-110"
+                          : ""
+                      }
+                    `}
+                  >
+                    {isDark ? "💡" : "💡"}
+                  </span>
+
+                  <span
+                    className={`
+                      text-[10px] font-extrabold
+                      ${
+                        isDark
+                          ? "text-yellow-600"
+                          : "text-slate-700"
+                      }
+                    `}
+                  >
+                    {isDark ? "LED ON" : "LED OFF"}
+                  </span>
+
+                  <span className="text-[9px] text-slate-500">
+                    {isDark ? "Light is glowing" : "Waiting..."}
+                  </span>
+                </div>
+
+              </div>
+            </div>
+
+            {/* STATUS */}
+            <div
+              className={`
+                shrink-0
+                mt-2
+                rounded-xl
+                px-3 py-2
+                text-center
+                ${
+                  isDark
+                    ? "bg-yellow-100 border border-yellow-200"
+                    : "bg-white border border-slate-200"
+                }
+              `}
+            >
+              <p className="text-[11px] font-bold text-slate-700">
+                {isDark
+                  ? "🌙 Darkness detected → Circuit turns the LED ON"
+                  : "☀️ Enough light detected → LED stays OFF"}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2911,81 +3156,2105 @@ function Page6WhatIsElectronics() {
    NEW PAGE 7 - WHAT IS A CIRCUIT?
 ========================================================= */
 function Page7WhatIsCircuit() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [narrate, setNarrate] = useState(true);
+
+  // =========================================================
+  // CAR REFS
+  // =========================================================
+
+  const carWrapRef = useRef<HTMLDivElement | null>(null);
+
+  const forwardCarRef =
+    useRef<HTMLImageElement | null>(null);
+
+  const backwardCarRef =
+    useRef<HTMLImageElement | null>(null);
+
+  // requestAnimationFrame reference
+  const rafRef =
+    useRef<number | null>(null);
+
+  const isOpenRef =
+    useRef<boolean>(false);
+
+  // Exact current car position
+  const posRef =
+    useRef<number>(9);
+
+  // Current movement phase
+  const phaseRef =
+    useRef<
+      "toBulb" |
+      "turnAtBulb" |
+      "toBattery" |
+      "turnAtBattery"
+    >("toBulb");
+
+  // Start time of a turn
+  const phaseStartRef =
+    useRef<number | null>(null);
+
+  // Last animation frame time
+  const lastTimeRef =
+    useRef<number | null>(null);
+
+  // Used only when paused during a turn
+  const pauseStartRef =
+    useRef<number | null>(null);
+
+  // false = front faces RIGHT / END
+  // true  = front faces LEFT / START
+  const carFacingLeftRef =
+    useRef<boolean>(false);
+
+  // =========================================================
+  // ROAD LIMITS
+  // =========================================================
+
+  const LEFT_BOUND = 9;
+  const RIGHT_BOUND = 88;
+
+  const ONE_WAY_MS = 4400;
+  const TURN_MS = 500;
+
+  const SPEED =
+    (RIGHT_BOUND - LEFT_BOUND) /
+    ONE_WAY_MS;
+
+  // =========================================================
+  // CAR DISPLAY
+  // =========================================================
+
+  const setCar = (
+    pos: number,
+    facingLeft: boolean
+  ) => {
+    if (!carWrapRef.current) return;
+
+    // Keep exact position
+    carWrapRef.current.style.left =
+      `${pos}%`;
+
+    carWrapRef.current.style.transform =
+      "translateY(-50%)";
+
+    // Remember direction
+    carFacingLeftRef.current =
+      facingLeft;
+
+    // -------------------------------------------------------
+    // Forward image
+    // Front faces RIGHT → END
+    // -------------------------------------------------------
+
+    if (forwardCarRef.current) {
+      forwardCarRef.current.style.display =
+        facingLeft
+          ? "none"
+          : "block";
+    }
+
+    // -------------------------------------------------------
+    // Mirrored image
+    // Front faces LEFT → START
+    // -------------------------------------------------------
+
+    if (backwardCarRef.current) {
+      backwardCarRef.current.style.display =
+        facingLeft
+          ? "block"
+          : "none";
+    }
+  };
+
+  // =========================================================
+  // KEEP REF IN SYNC
+  // =========================================================
+
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  // =========================================================
+  // CAR ANIMATION
+  // =========================================================
+
+  useEffect(() => {
+    function frame(timestamp: number) {
+      const previous =
+        lastTimeRef.current ??
+        timestamp;
+
+      const dt =
+        timestamp - previous;
+
+      lastTimeRef.current =
+        timestamp;
+
+      // =====================================================
+      // OPEN CIRCUIT
+      //
+      // IMPORTANT:
+      // Do NOTHING.
+      //
+      // Position, direction and phase stay exactly the same.
+      // =====================================================
+
+      if (isOpenRef.current) {
+        rafRef.current =
+          requestAnimationFrame(frame);
+
+        return;
+      }
+
+      // =====================================================
+      // CLOSED CIRCUIT
+      // =====================================================
+
+      const phase =
+        phaseRef.current;
+
+      // =====================================================
+      // START / BATTERY → END / LED
+      // =====================================================
+
+      if (phase === "toBulb") {
+        let pos =
+          posRef.current +
+          SPEED * dt;
+
+        if (
+          pos >= RIGHT_BOUND
+        ) {
+          pos =
+            RIGHT_BOUND;
+
+          posRef.current =
+            RIGHT_BOUND;
+
+          phaseRef.current =
+            "turnAtBulb";
+
+          phaseStartRef.current =
+            timestamp;
+
+          // Front faces END
+          setCar(
+            RIGHT_BOUND,
+            false
+          );
+        } else {
+          posRef.current =
+            pos;
+
+          // Front faces END
+          setCar(
+            pos,
+            false
+          );
+        }
+      }
+
+      // =====================================================
+      // TURN AT END / LED
+      // =====================================================
+
+      else if (
+        phase === "turnAtBulb"
+      ) {
+        const start =
+          phaseStartRef.current ??
+          timestamp;
+
+        const elapsed =
+          timestamp - start;
+
+        // Stay at END for the turn duration.
+        // NO rotation.
+        if (
+          elapsed < TURN_MS
+        ) {
+          setCar(
+            RIGHT_BOUND,
+            false
+          );
+        } else {
+          // Switch to mirrored car.
+          // Front now faces START.
+          setCar(
+            RIGHT_BOUND,
+            true
+          );
+
+          phaseRef.current =
+            "toBattery";
+
+          phaseStartRef.current =
+            null;
+        }
+      }
+
+      // =====================================================
+      // END / LED → START / BATTERY
+      // =====================================================
+
+      else if (
+        phase === "toBattery"
+      ) {
+        let pos =
+          posRef.current -
+          SPEED * dt;
+
+        if (
+          pos <= LEFT_BOUND
+        ) {
+          pos =
+            LEFT_BOUND;
+
+          posRef.current =
+            LEFT_BOUND;
+
+          phaseRef.current =
+            "turnAtBattery";
+
+          phaseStartRef.current =
+            timestamp;
+
+          // Front faces START
+          setCar(
+            LEFT_BOUND,
+            true
+          );
+        } else {
+          posRef.current =
+            pos;
+
+          // Front faces START
+          setCar(
+            pos,
+            true
+          );
+        }
+      }
+
+      // =====================================================
+      // TURN AT START / BATTERY
+      // =====================================================
+
+      else if (
+        phase === "turnAtBattery"
+      ) {
+        const start =
+          phaseStartRef.current ??
+          timestamp;
+
+        const elapsed =
+          timestamp - start;
+
+        if (
+          elapsed < TURN_MS
+        ) {
+          // Stay at START
+          // Front faces START
+          setCar(
+            LEFT_BOUND,
+            true
+          );
+        } else {
+          // Return to normal image
+          // Front faces END
+          setCar(
+            LEFT_BOUND,
+            false
+          );
+
+          phaseRef.current =
+            "toBulb";
+
+          phaseStartRef.current =
+            null;
+        }
+      }
+
+      rafRef.current =
+        requestAnimationFrame(frame);
+    }
+
+    rafRef.current =
+      requestAnimationFrame(frame);
+
+    return () => {
+      if (
+        rafRef.current !== null
+      ) {
+        cancelAnimationFrame(
+          rafRef.current
+        );
+
+        rafRef.current =
+          null;
+      }
+    };
+  }, []);
+
+  // =========================================================
+  // VOICE NARRATION
+  // =========================================================
+
+  const speak = (
+    text: string
+  ) => {
+    if (!narrate) return;
+
+    if (
+      typeof window === "undefined" ||
+      !window.speechSynthesis
+    ) {
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance =
+      new SpeechSynthesisUtterance(
+        text
+      );
+
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+
+    window.speechSynthesis.speak(
+      utterance
+    );
+  };
+
+  const openLine =
+    "Open circuit. The switch is open, so the electrical path is broken. Electrons stop at the switch. The wire remains visible, but the path is interrupted. The bridge separates in the middle. The car stops exactly where it is. The L E D turns off.";
+
+  const closeLine =
+    "Closed circuit. The switch is closed, so the electrical path is complete. Electrons flow continuously around the loop. The bridge is fully connected. The car continues from the same position in the same direction. The L E D glows steadily.";
+
+  // =========================================================
+  // OPEN CIRCUIT
+  //
+  // IMPORTANT:
+  // Do NOT change car position.
+  // Do NOT reset phase.
+  // Do NOT reset direction.
+  // =========================================================
+
+  const handleOpen = () => {
+    if (!isOpenRef.current) {
+      pauseStartRef.current =
+        performance.now();
+    }
+
+    isOpenRef.current =
+      true;
+
+    setIsOpen(true);
+
+    // Prevent one large dt after resume
+    lastTimeRef.current =
+      null;
+
+    // Freeze exactly where the car currently is
+    setCar(
+      posRef.current,
+      carFacingLeftRef.current
+    );
+
+    speak(openLine);
+  };
+
+  // =========================================================
+  // CLOSE CIRCUIT
+  //
+  // Resume from EXACT same position,
+  // phase and direction.
+  // =========================================================
+
+  const handleClose = () => {
+    const now =
+      performance.now();
+
+    // If the car was paused during a turn,
+    // preserve the remaining turn duration.
+    if (
+      pauseStartRef.current !== null &&
+      phaseStartRef.current !== null
+    ) {
+      const pausedDuration =
+        now -
+        pauseStartRef.current;
+
+      phaseStartRef.current +=
+        pausedDuration;
+    }
+
+    pauseStartRef.current =
+      null;
+
+    isOpenRef.current =
+      false;
+
+    setIsOpen(false);
+
+    // Prevent one large dt after resume
+    lastTimeRef.current =
+      null;
+
+    // Restore exact position and direction
+    setCar(
+      posRef.current,
+      carFacingLeftRef.current
+    );
+
+    speak(closeLine);
+  };
+
+  // =========================================================
+  // RESET
+  // =========================================================
+
+  const handleReset = () => {
+    isOpenRef.current =
+      false;
+
+    setIsOpen(false);
+
+    posRef.current =
+      LEFT_BOUND;
+
+    phaseRef.current =
+      "toBulb";
+
+    phaseStartRef.current =
+      null;
+
+    pauseStartRef.current =
+      null;
+
+    lastTimeRef.current =
+      null;
+
+    carFacingLeftRef.current =
+      false;
+
+    setCar(
+      LEFT_BOUND,
+      false
+    );
+
+    speak(
+      "Reset. " +
+      closeLine
+    );
+  };
+
+  // =========================================================
+  // VOICE TOGGLE
+  // =========================================================
+
+  const toggleNarrate = () => {
+    setNarrate((prev) => {
+      const next =
+        !prev;
+
+      if (
+        !next &&
+        typeof window !==
+          "undefined" &&
+        window.speechSynthesis
+      ) {
+        window.speechSynthesis.cancel();
+      }
+
+      return next;
+    });
+  };
+
+  // =========================================================
+  // WIRES
+  //
+  // IMPORTANT:
+  // Switch → LED wire ALWAYS remains visible.
+  // =========================================================
+
+  const wireSegments = [
+    // Battery → Switch
+    "M 92 58 H 275",
+
+    // Switch → LED
+    // ALWAYS visible
+    "M 325 58 H 460",
+
+    // LED connection
+    "M 460 58 H 500",
+
+    "M 500 58 H 508",
+
+    // Right return
+    "M 508 58 V 145",
+
+    // Bottom return
+    "M 508 145 H 92",
+
+    // Left return
+    "M 92 145 V 70",
+  ];
+
   return (
-    <div className="h-full flex flex-col p-8 bg-slate-50 overflow-hidden">
-      <div className="flex items-center gap-3 mb-4 shrink-0">
-        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">7</div>
-        <h2 className="text-3xl font-extrabold text-slate-900">🔌 What is a Circuit?</h2>
-      </div>
-      <p className="text-slate-600 font-medium mb-5 shrink-0">
-        A circuit is a complete path through which electric current can flow.
-      </p>
+    <div className="h-full w-full bg-slate-50 p-6 flex flex-col overflow-hidden">
 
-      <div className="flex-1 min-h-0 grid grid-cols-2 gap-5">
-        <div className="rounded-3xl bg-white border-2 border-emerald-200 p-6 flex flex-col justify-center text-center shadow-sm">
-          <div className="text-5xl mb-4">✅</div>
-          <h3 className="text-xl font-extrabold text-emerald-700">Complete Path</h3>
-          <p className="text-sm text-slate-600 font-medium mt-2 leading-relaxed">
-            The path is complete, so electric current can flow.
-          </p>
+      {/* ===================================================== */}
+      {/* HEADER */}
+      {/* ===================================================== */}
+
+      <div className="flex items-center gap-3 mb-3 shrink-0">
+
+        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+          7
         </div>
-        <div className="rounded-3xl bg-white border-2 border-red-200 p-6 flex flex-col justify-center text-center shadow-sm">
-          <div className="text-5xl mb-4">❌</div>
-          <h3 className="text-xl font-extrabold text-red-600">Broken Path</h3>
-          <p className="text-sm text-slate-600 font-medium mt-2 leading-relaxed">
-            The path is broken, so electric current cannot flow.
+
+        <div className="flex-1">
+
+          <h2 className="text-2xl font-extrabold text-slate-900">
+            🔌 What is a Circuit?
+          </h2>
+
+          <p className="text-sm text-slate-500 font-medium mt-1">
+            A real electrical circuit compared with a real road and bridge.
           </p>
+
         </div>
+
+        <button
+          type="button"
+          onClick={toggleNarrate}
+          className={`
+            shrink-0
+            px-3
+            py-2
+            rounded-xl
+            text-xs
+            font-extrabold
+            border
+            transition-all
+            ${
+              narrate
+                ? "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
+            }
+          `}
+        >
+          {narrate
+            ? "🔊 Voice On"
+            : "🔇 Voice Off"}
+        </button>
+
       </div>
 
-      <div className="mt-5 rounded-2xl bg-blue-50 border border-blue-100 p-4 text-center shrink-0">
-        <span className="font-extrabold text-blue-700">⚡ Key idea:</span>{' '}
-        <span className="font-medium text-slate-700">Complete path = current can flow.</span>
+      <div className="flex-1 min-h-0 flex flex-col gap-3">
+
+        {/* ================================================= */}
+        {/* ELECTRICAL CIRCUIT */}
+        {/* ================================================= */}
+
+        <div
+          className="
+            relative
+            flex-1
+            min-h-0
+            rounded-2xl
+            border
+            border-slate-300
+            shadow-md
+            overflow-hidden
+          "
+          style={{
+            background:
+              "radial-gradient(circle at 30% 20%, #ffffff 0%, #f1f5f9 55%, #e2e8f0 100%)",
+          }}
+        >
+
+          <div className="absolute top-3 left-4 z-20">
+            <div className="text-[10px] font-extrabold tracking-widest text-slate-500">
+              ELECTRICAL CIRCUIT
+            </div>
+          </div>
+
+          {/* Circuit status */}
+
+          <div
+            className={`
+              absolute
+              top-3
+              right-3
+              z-30
+              px-3
+              py-1.5
+              rounded-full
+              text-[10px]
+              font-extrabold
+              border
+              shadow-sm
+              ${
+                isOpen
+                  ? "bg-red-50 text-red-600 border-red-200"
+                  : "bg-emerald-50 text-emerald-600 border-emerald-200"
+              }
+            `}
+          >
+            {isOpen
+              ? "🔴 OPEN CIRCUIT"
+              : "🟢 CLOSED CIRCUIT"}
+          </div>
+
+          <div className="absolute inset-0 pt-8">
+
+            <svg
+              viewBox="0 0 600 190"
+              className="w-full h-full"
+              preserveAspectRatio="xMidYMid meet"
+            >
+
+              <defs>
+
+                {/* Wire highlight */}
+
+                <linearGradient
+                  id="p7WireHighlight"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0"
+                    stopColor="#cbd5e1"
+                  />
+
+                  <stop
+                    offset="1"
+                    stopColor="#64748b"
+                  />
+                </linearGradient>
+
+                {/* Metal */}
+
+                <radialGradient
+                  id="p7PostMetal"
+                  cx="35%"
+                  cy="30%"
+                  r="70%"
+                >
+                  <stop
+                    offset="0"
+                    stopColor="#f1f5f9"
+                  />
+
+                  <stop
+                    offset="0.5"
+                    stopColor="#94a3b8"
+                  />
+
+                  <stop
+                    offset="1"
+                    stopColor="#334155"
+                  />
+                </radialGradient>
+
+                {/* Switch plate */}
+
+                <linearGradient
+                  id="p7PlateMetal"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0"
+                    stopColor="#475569"
+                  />
+
+                  <stop
+                    offset="1"
+                    stopColor="#1e293b"
+                  />
+                </linearGradient>
+
+                {/* Closed lever */}
+
+                <linearGradient
+                  id="p7LeverClosed"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="0"
+                >
+                  <stop
+                    offset="0"
+                    stopColor="#4ade80"
+                  />
+
+                  <stop
+                    offset="1"
+                    stopColor="#15803d"
+                  />
+                </linearGradient>
+
+                {/* Open lever */}
+
+                <linearGradient
+                  id="p7LeverOpen"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="0"
+                >
+                  <stop
+                    offset="0"
+                    stopColor="#fca5a5"
+                  />
+
+                  <stop
+                    offset="1"
+                    stopColor="#b91c1c"
+                  />
+                </linearGradient>
+
+                {/* LED ON */}
+
+                <radialGradient
+                  id="p7LedOn"
+                  cx="35%"
+                  cy="30%"
+                  r="75%"
+                >
+                  <stop
+                    offset="0"
+                    stopColor="#fff8d6"
+                  />
+
+                  <stop
+                    offset="0.45"
+                    stopColor="#fde047"
+                  />
+
+                  <stop
+                    offset="1"
+                    stopColor="#ca8a04"
+                  />
+                </radialGradient>
+
+                {/* LED OFF */}
+
+                <radialGradient
+                  id="p7LedOff"
+                  cx="35%"
+                  cy="30%"
+                  r="75%"
+                >
+                  <stop
+                    offset="0"
+                    stopColor="#e5e7eb"
+                  />
+
+                  <stop
+                    offset="1"
+                    stopColor="#9ca3af"
+                  />
+                </radialGradient>
+
+                {/* LED glow */}
+
+                <radialGradient
+                  id="p7LedGlow"
+                  cx="50%"
+                  cy="50%"
+                  r="50%"
+                >
+                  <stop
+                    offset="0"
+                    stopColor="#fde047"
+                    stopOpacity="0.85"
+                  />
+
+                  <stop
+                    offset="1"
+                    stopColor="#fde047"
+                    stopOpacity="0"
+                  />
+                </radialGradient>
+
+                {/* Electron glow */}
+
+                <radialGradient
+                  id="p7ElectronGlow"
+                  cx="50%"
+                  cy="50%"
+                  r="50%"
+                >
+                  <stop
+                    offset="0"
+                    stopColor="#93c5fd"
+                    stopOpacity="0.95"
+                  />
+
+                  <stop
+                    offset="1"
+                    stopColor="#93c5fd"
+                    stopOpacity="0"
+                  />
+                </radialGradient>
+
+              </defs>
+
+              {/* ================================================= */}
+              {/* WIRES — ALWAYS VISIBLE */}
+              {/* ================================================= */}
+
+              {wireSegments.map(
+                (d, i) => (
+                  <g key={i}>
+
+                    <path
+                      d={d}
+                      fill="none"
+                      stroke="#0f172a"
+                      strokeWidth="9"
+                      strokeLinecap="round"
+                      style={{
+                        filter:
+                          "drop-shadow(0 2px 2px rgba(0,0,0,0.35))",
+                      }}
+                    />
+
+                    <path
+                      d={d}
+                      fill="none"
+                      stroke="url(#p7WireHighlight)"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      opacity="0.55"
+                      transform="translate(0,-2)"
+                    />
+
+                  </g>
+                )
+              )}
+
+              {/* ================================================= */}
+              {/* SWITCH PLATE */}
+              {/* ================================================= */}
+
+              <rect
+                x="258"
+                y="40"
+                width="84"
+                height="34"
+                rx="6"
+                fill="url(#p7PlateMetal)"
+                stroke="#0f172a"
+                strokeWidth="1"
+              />
+
+              <circle
+                cx="332"
+                cy="47"
+                r="3"
+                fill={
+                  isOpen
+                    ? "#ef4444"
+                    : "#22c55e"
+                }
+                style={{
+                  filter:
+                    isOpen
+                      ? "drop-shadow(0 0 3px #ef4444)"
+                      : "drop-shadow(0 0 3px #22c55e)",
+                }}
+              />
+
+              {/* ================================================= */}
+              {/* SWITCH CONTACTS */}
+              {/* ================================================= */}
+
+              <circle
+                cx="275"
+                cy="58"
+                r="8"
+                fill="url(#p7PostMetal)"
+                stroke="#1e293b"
+                strokeWidth="1"
+              />
+
+              <circle
+                cx="325"
+                cy="58"
+                r="8"
+                fill="url(#p7PostMetal)"
+                stroke="#1e293b"
+                strokeWidth="1"
+              />
+
+              {/* ================================================= */}
+              {/* SWITCH LEVER */}
+              {/* ================================================= */}
+
+              <line
+                x1="275"
+                y1="58"
+                x2={
+                  isOpen
+                    ? "305"
+                    : "325"
+                }
+                y2={
+                  isOpen
+                    ? "27"
+                    : "58"
+                }
+                stroke={
+                  isOpen
+                    ? "url(#p7LeverOpen)"
+                    : "url(#p7LeverClosed)"
+                }
+                strokeWidth="6"
+                strokeLinecap="round"
+              />
+
+              <circle
+                cx="275"
+                cy="58"
+                r="3.5"
+                fill="#e2e8f0"
+                stroke="#475569"
+                strokeWidth="0.75"
+              />
+
+              {/* Open gap */}
+
+              {isOpen && (
+                <line
+                  x1="288"
+                  y1="58"
+                  x2="307"
+                  y2="58"
+                  stroke="#ef4444"
+                  strokeWidth="2"
+                  strokeDasharray="3 3"
+                />
+              )}
+
+              {/* ================================================= */}
+              {/* LED */}
+              {/* ================================================= */}
+
+              <g>
+
+                {!isOpen && (
+                  <circle
+                    cx="480"
+                    cy="38"
+                    r="34"
+                    fill="url(#p7LedGlow)"
+                  />
+                )}
+
+                <rect
+                  x="468"
+                  y="52"
+                  width="24"
+                  height="6"
+                  rx="2"
+                  fill="#475569"
+                />
+
+                <line
+                  x1="474"
+                  y1="58"
+                  x2="474"
+                  y2="52"
+                  stroke="#334155"
+                  strokeWidth="2"
+                />
+
+                <line
+                  x1="486"
+                  y1="58"
+                  x2="486"
+                  y2="52"
+                  stroke="#334155"
+                  strokeWidth="2"
+                />
+
+                <path
+                  d="
+                    M 462 52
+                    C 462 32 468 18 480 18
+                    C 492 18 498 32 498 52 Z
+                  "
+                  fill={
+                    isOpen
+                      ? "url(#p7LedOff)"
+                      : "url(#p7LedOn)"
+                  }
+                  stroke="#78350f"
+                  strokeWidth="1"
+                />
+
+                {!isOpen && (
+                  <ellipse
+                    cx="474"
+                    cy="30"
+                    rx="4"
+                    ry="7"
+                    fill="#fff9c4"
+                    opacity="0.8"
+                  />
+                )}
+
+              </g>
+
+              {/* ================================================= */}
+              {/* ELECTRONS */}
+              {/* ================================================= */}
+
+              {!isOpen ? (
+                <>
+                  <path
+                    id="p7ElectronLoop"
+                    d="
+                      M 110 58
+                      H 508
+                      V 145
+                      H 92
+                      V 58
+                      H 110
+                    "
+                    fill="none"
+                    stroke="none"
+                  />
+
+                  {[0, 1.1, 2.2].map(
+                    (delay, i) => (
+                      <g key={i}>
+
+                        <circle
+                          r="7"
+                          fill="url(#p7ElectronGlow)"
+                        >
+                          <animateMotion
+                            dur="3.4s"
+                            begin={`${delay}s`}
+                            repeatCount="indefinite"
+                          >
+                            <mpath href="#p7ElectronLoop" />
+                          </animateMotion>
+                        </circle>
+
+                        <text
+                          fill="#1d4ed8"
+                          fontSize="11"
+                          fontWeight="800"
+                          textAnchor="middle"
+                          dy="3"
+                        >
+                          e⁻
+
+                          <animateMotion
+                            dur="3.4s"
+                            begin={`${delay}s`}
+                            repeatCount="indefinite"
+                          >
+                            <mpath href="#p7ElectronLoop" />
+                          </animateMotion>
+                        </text>
+
+                      </g>
+                    )
+                  )}
+                </>
+              ) : (
+                <g>
+
+                  {/* Electron stopped before switch */}
+
+                  <circle
+                    cx="255"
+                    cy="58"
+                    r="7"
+                    fill="url(#p7ElectronGlow)"
+                  />
+
+                  <text
+                    x="255"
+                    y="61"
+                    fill="#1d4ed8"
+                    fontSize="11"
+                    fontWeight="800"
+                    textAnchor="middle"
+                  >
+                    e⁻
+                  </text>
+
+                </g>
+              )}
+
+              {/* ================================================= */}
+              {/* CIRCUIT MESSAGE */}
+              {/* ================================================= */}
+
+              {!isOpen && (
+                <text
+                  x="290"
+                  y="112"
+                  textAnchor="middle"
+                  fill="#1d4ed8"
+                  fontSize="12"
+                  fontWeight="800"
+                >
+                  ⚡ CURRENT FLOWS CONTINUOUSLY AROUND THE LOOP
+                </text>
+              )}
+
+              {isOpen && (
+                <text
+                  x="290"
+                  y="112"
+                  textAnchor="middle"
+                  fill="#dc2626"
+                  fontSize="12"
+                  fontWeight="800"
+                >
+                  ⛔ SWITCH OPEN — CURRENT STOPS
+                </text>
+              )}
+
+            </svg>
+
+            {/* ================================================= */}
+            {/* BATTERY */}
+            {/* ================================================= */}
+
+            <div className="absolute left-[8%] top-[32%] -translate-x-1/2 flex flex-col items-center">
+
+              <div
+                className="relative flex items-center"
+                style={{
+                  filter:
+                    "drop-shadow(0 3px 3px rgba(0,0,0,0.3))",
+                }}
+              >
+
+                <div
+                  className="h-4 w-2 rounded-sm"
+                  style={{
+                    background:
+                      "linear-gradient(to bottom, #4b5563, #1f2937)",
+                  }}
+                />
+
+                <div
+                  className="
+                    h-9
+                    w-16
+                    rounded-md
+                    relative
+                    overflow-hidden
+                    border
+                    border-slate-700
+                  "
+                  style={{
+                    background:
+                      "linear-gradient(to bottom, #f8fafc 0%, #94a3b8 25%, #475569 55%, #334155 100%)",
+                  }}
+                >
+
+                  <div className="absolute inset-x-0 top-1 h-1.5 bg-white/40 rounded-full mx-2" />
+
+                  <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-800">
+                    −
+                  </span>
+
+                  <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] font-black text-amber-100">
+                    +
+                  </span>
+
+                </div>
+
+                <div
+                  className="h-3 w-2.5 rounded-sm"
+                  style={{
+                    background:
+                      "linear-gradient(to bottom, #fcd34d, #b45309)",
+                  }}
+                />
+
+              </div>
+
+              <div className="mt-1.5 rounded-lg bg-white/80 border border-slate-300 px-2 py-0.5 text-[9px] font-extrabold text-slate-600 shadow-sm">
+                BATTERY
+              </div>
+
+            </div>
+
+            {/* ================================================= */}
+            {/* SWITCH LABEL */}
+            {/* ================================================= */}
+
+            <div className="absolute left-1/2 top-[45%] -translate-x-1/2 text-center">
+
+              <div
+                className={`
+                  rounded-md
+                  px-2
+                  py-1
+                  text-[9px]
+                  font-extrabold
+                  border
+                  shadow-sm
+                  ${
+                    isOpen
+                      ? "bg-red-50 text-red-600 border-red-200"
+                      : "bg-emerald-50 text-emerald-600 border-emerald-200"
+                  }
+                `}
+              >
+                SWITCH{" "}
+                {isOpen
+                  ? "OPEN"
+                  : "CLOSED"}
+              </div>
+
+            </div>
+
+            {/* ================================================= */}
+            {/* LED LABEL */}
+            {/* ================================================= */}
+
+            <div className="absolute right-[9%] top-[46%] translate-x-1/2 text-center">
+
+              <div
+                className={`
+                  rounded-md
+                  px-2
+                  py-1
+                  text-[9px]
+                  font-extrabold
+                  border
+                  shadow-sm
+                  ${
+                    isOpen
+                      ? "bg-slate-100 text-slate-500 border-slate-200"
+                      : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                  }
+                `}
+              >
+                LED{" "}
+                {isOpen
+                  ? "OFF"
+                  : "ON"}
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        {/* ================================================= */}
+        {/* ROAD + BRIDGE */}
+        {/* ================================================= */}
+
+        <div
+          className="
+            relative
+            h-[190px]
+            shrink-0
+            rounded-2xl
+            border
+            border-slate-300
+            shadow-md
+            overflow-hidden
+          "
+          style={{
+            background:
+              "linear-gradient(to bottom, #e2e8f0, #cbd5e1)",
+          }}
+        >
+
+          <div className="absolute top-3 left-4 z-20">
+
+            <div className="text-[10px] font-extrabold tracking-widest text-slate-500">
+              ROAD + BRIDGE ANALOGY
+            </div>
+
+          </div>
+
+          {/* ================================================= */}
+          {/* START */}
+          {/* ================================================= */}
+
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center">
+
+            <div
+              className="
+                rounded-sm
+                px-3
+                py-1.5
+                text-center
+                border-2
+                border-white
+                shadow-md
+              "
+              style={{
+                background:
+                  "linear-gradient(to bottom, #16a34a, #14532d)",
+              }}
+            >
+
+              <div className="text-[9px] font-black text-white tracking-wider">
+                START
+              </div>
+
+            </div>
+
+            <div className="w-1 h-3 bg-slate-500" />
+
+          </div>
+
+          {/* ================================================= */}
+          {/* END */}
+          {/* ================================================= */}
+
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center">
+
+            <div
+              className="
+                rounded-sm
+                px-3
+                py-1.5
+                text-center
+                border-2
+                border-white
+                shadow-md
+              "
+              style={{
+                background:
+                  "linear-gradient(to bottom, #2563eb, #1e3a8a)",
+              }}
+            >
+
+              <div className="text-[9px] font-black text-white tracking-wider">
+                END
+              </div>
+
+            </div>
+
+            <div className="w-1 h-3 bg-slate-500" />
+
+          </div>
+
+          {/* ================================================= */}
+          {/* ROAD */}
+          {/* ================================================= */}
+
+          <div
+            className="
+              absolute
+              left-[9%]
+              right-[9%]
+              top-1/2
+              -translate-y-1/2
+              h-[70px]
+              rounded-md
+              overflow-hidden
+              border-y-2
+              border-slate-600
+              shadow-inner
+            "
+            style={{
+              background:
+                "linear-gradient(to bottom, #4b5563 0%, #374151 45%, #1f2937 100%)",
+            }}
+          >
+
+            {/* Road line */}
+
+            <div
+              className="
+                absolute
+                left-0
+                right-0
+                top-1/2
+                -translate-y-1/2
+                h-[3px]
+              "
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(to right, #fde68a 0px, #fde68a 20px, transparent 20px 40px)",
+                boxShadow:
+                  "0 0 3px rgba(253,230,138,0.6)",
+              }}
+            />
+
+            {/* ================================================= */}
+            {/* CONNECTED BRIDGE */}
+            {/* ================================================= */}
+
+            {!isOpen && (
+              <div
+                className="
+                  absolute
+                  left-[40%]
+                  right-[40%]
+                  top-0
+                  bottom-0
+                  z-20
+                  border-x-2
+                  border-slate-400
+                "
+                style={{
+                  background:
+                    "linear-gradient(to bottom, #e2e8f0 0%, #94a3b8 45%, #64748b 100%)",
+                }}
+              >
+
+                <div
+                  className="
+                    absolute
+                    top-0
+                    left-0
+                    right-0
+                    h-1.5
+                  "
+                  style={{
+                    backgroundImage:
+                      "repeating-linear-gradient(to right, #334155 0 3px, transparent 3px 12px)",
+                  }}
+                />
+
+                <div
+                  className="
+                    absolute
+                    bottom-0
+                    left-0
+                    right-0
+                    h-1.5
+                  "
+                  style={{
+                    backgroundImage:
+                      "repeating-linear-gradient(to right, #334155 0 3px, transparent 3px 12px)",
+                  }}
+                />
+
+                <div className="absolute inset-x-1 top-1/2 -translate-y-1/2 h-[2px] bg-slate-400/70" />
+
+              </div>
+            )}
+
+            {/* ================================================= */}
+            {/* BROKEN BRIDGE */}
+            {/* ================================================= */}
+
+            {isOpen && (
+              <>
+
+                {/* Left bridge half */}
+
+                <div
+                  className="
+                    absolute
+                    left-[33%]
+                    top-0
+                    bottom-0
+                    w-[9%]
+                    z-20
+                  "
+                  style={{
+                    background:
+                      "linear-gradient(to bottom, #e2e8f0 0%, #94a3b8 45%, #64748b 100%)",
+                  }}
+                >
+
+                  <div
+                    className="
+                      absolute
+                      top-0
+                      left-0
+                      right-0
+                      h-1.5
+                    "
+                    style={{
+                      backgroundImage:
+                        "repeating-linear-gradient(to right, #334155 0 3px, transparent 3px 12px)",
+                    }}
+                  />
+
+                  <div
+                    className="
+                      absolute
+                      bottom-0
+                      left-0
+                      right-0
+                      h-1.5
+                    "
+                    style={{
+                      backgroundImage:
+                        "repeating-linear-gradient(to right, #334155 0 3px, transparent 3px 12px)",
+                    }}
+                  />
+
+                  <div
+                    className="
+                      absolute
+                      right-0
+                      top-0
+                      bottom-0
+                      w-1.5
+                    "
+                    style={{
+                      backgroundImage:
+                        "repeating-linear-gradient(45deg, #facc15 0 5px, #1f2937 5px 10px)",
+                    }}
+                  />
+
+                </div>
+
+                {/* Right bridge half */}
+
+                <div
+                  className="
+                    absolute
+                    right-[33%]
+                    top-0
+                    bottom-0
+                    w-[9%]
+                    z-20
+                  "
+                  style={{
+                    background:
+                      "linear-gradient(to bottom, #e2e8f0 0%, #94a3b8 45%, #64748b 100%)",
+                  }}
+                >
+
+                  <div
+                    className="
+                      absolute
+                      top-0
+                      left-0
+                      right-0
+                      h-1.5
+                    "
+                    style={{
+                      backgroundImage:
+                        "repeating-linear-gradient(to right, #334155 0 3px, transparent 3px 12px)",
+                    }}
+                  />
+
+                  <div
+                    className="
+                      absolute
+                      bottom-0
+                      left-0
+                      right-0
+                      h-1.5
+                    "
+                    style={{
+                      backgroundImage:
+                        "repeating-linear-gradient(to right, #334155 0 3px, transparent 3px 12px)",
+                    }}
+                  />
+
+                  <div
+                    className="
+                      absolute
+                      left-0
+                      top-0
+                      bottom-0
+                      w-1.5
+                    "
+                    style={{
+                      backgroundImage:
+                        "repeating-linear-gradient(45deg, #facc15 0 5px, #1f2937 5px 10px)",
+                    }}
+                  />
+
+                </div>
+
+                {/* Warning */}
+
+                <div
+                  className="
+                    absolute
+                    left-1/2
+                    top-1/2
+                    -translate-x-1/2
+                    -translate-y-1/2
+                    z-30
+                  "
+                  style={{
+                    width: 0,
+                    height: 0,
+                    borderLeft:
+                      "13px solid transparent",
+                    borderRight:
+                      "13px solid transparent",
+                    borderBottom:
+                      "22px solid #facc15",
+                    filter:
+                      "drop-shadow(0 1px 2px rgba(0,0,0,0.4))",
+                  }}
+                >
+
+                  <span
+                    className="
+                      absolute
+                      font-black
+                      text-slate-900
+                    "
+                    style={{
+                      top: "9px",
+                      left: "-3px",
+                      fontSize: "11px",
+                    }}
+                  >
+                    !
+                  </span>
+
+                </div>
+
+              </>
+            )}
+
+            {/* ================================================= */}
+            {/* CAR */}
+            {/* ================================================= */}
+
+            <div
+              ref={carWrapRef}
+              className="
+                absolute
+                top-1/2
+                z-40
+              "
+              style={{
+                left:
+                  `${LEFT_BOUND}%`,
+                transform:
+                  "translateY(-50%)",
+                width: "52px",
+                height: "40px",
+              }}
+            >
+
+              {/* ================================================= */}
+              {/* FORWARD CAR
+                  START → END
+                  FRONT = RIGHT
+              ================================================= */}
+
+              <img
+                ref={forwardCarRef}
+                src="/images/car.png"
+                alt="Car moving from start to end"
+                className="
+                  absolute
+                  inset-0
+                  w-full
+                  h-full
+                  object-contain
+                "
+                style={{
+                  display: "block",
+                }}
+              />
+
+              {/* ================================================= */}
+              {/* MIRRORED CAR
+                  END → START
+                  FRONT = LEFT
+              ================================================= */}
+
+              <img
+                ref={backwardCarRef}
+                src="/images/car.png"
+                alt="Car returning from end to start"
+                className="
+                  absolute
+                  inset-0
+                  w-full
+                  h-full
+                  object-contain
+                "
+                style={{
+                  display: "none",
+                  transform:
+                    "scaleX(-1)",
+                  transformOrigin:
+                    "center",
+                }}
+              />
+
+            </div>
+
+          </div>
+
+          {/* ================================================= */}
+          {/* ROAD STATUS */}
+          {/* ================================================= */}
+
+          <div
+            className={`
+              absolute
+              bottom-3
+              left-1/2
+              -translate-x-1/2
+              px-4
+              py-1.5
+              rounded-full
+              text-[10px]
+              font-extrabold
+              border
+              shadow-sm
+              ${
+                isOpen
+                  ? "bg-red-50 text-red-600 border-red-200"
+                  : "bg-emerald-50 text-emerald-600 border-emerald-200"
+              }
+            `}
+          >
+            {isOpen
+              ? "⛔ BRIDGE BROKEN → CAR FROZEN AT CURRENT POSITION"
+              : "⚡ BRIDGE CONNECTED → CAR MOVES CONTINUOUSLY"}
+          </div>
+
+        </div>
+
+        {/* ================================================= */}
+        {/* BUTTONS */}
+        {/* ================================================= */}
+
+        <div className="shrink-0 flex justify-center items-center gap-3">
+
+          <button
+            type="button"
+            onClick={handleOpen}
+            className={`
+              min-w-[135px]
+              px-4
+              py-2.5
+              rounded-xl
+              text-sm
+              font-extrabold
+              transition-all
+              ${
+                isOpen
+                  ? "bg-red-500 text-white shadow-md"
+                  : "bg-red-100 text-red-700 hover:bg-red-200"
+              }
+            `}
+          >
+            🔓 Open Circuit
+          </button>
+
+          <button
+            type="button"
+            onClick={handleClose}
+            className={`
+              min-w-[135px]
+              px-4
+              py-2.5
+              rounded-xl
+              text-sm
+              font-extrabold
+              transition-all
+              ${
+                !isOpen
+                  ? "bg-emerald-500 text-white shadow-md"
+                  : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+              }
+            `}
+          >
+            🔒 Close Circuit
+          </button>
+
+          <button
+            type="button"
+            onClick={handleReset}
+            className="
+              min-w-[100px]
+              px-4
+              py-2.5
+              rounded-xl
+              bg-slate-700
+              text-white
+              text-sm
+              font-extrabold
+              shadow-md
+              hover:bg-slate-800
+              transition-all
+            "
+          >
+            ↻ Reset
+          </button>
+
+        </div>
+
+        {/* ================================================= */}
+        {/* EXPLANATION */}
+        {/* ================================================= */}
+
+        <div
+          className={`
+            shrink-0
+            rounded-xl
+            px-4
+            py-2.5
+            text-center
+            text-xs
+            font-bold
+            border
+            ${
+              isOpen
+                ? "bg-red-50 border-red-100 text-red-700"
+                : "bg-blue-50 border-blue-100 text-blue-700"
+            }
+          `}
+        >
+
+          {isOpen ? (
+            <>
+              🔴 Open switch → electrical path breaks →
+              electrons stop → bridge separates → car freezes
+              exactly where it is → LED turns OFF.
+            </>
+          ) : (
+            <>
+              🟢 Closed switch → electrical path is complete →
+              electrons flow → bridge connects → car resumes from
+              the same position → LED stays ON.
+            </>
+          )}
+
+        </div>
+
       </div>
     </div>
   );
 }
-
 /* =========================================================
    NEW PAGE 8 - HOW A CIRCUIT WORKS
 ========================================================= */
-function Page8HowCircuitWorks() {
+function Page8HowACircuitWorks() {
   return (
-    <div className="h-full flex flex-col p-7 bg-white overflow-hidden">
-      <div className="flex items-center gap-3 mb-4 shrink-0">
-        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">8</div>
-        <h2 className="text-2xl font-extrabold text-slate-900">🔌 How a Circuit Works</h2>
+    <div className="h-full w-full flex flex-col p-7 bg-slate-50 overflow-hidden">
+
+      {/* =====================================================
+          PAGE HEADER
+      ===================================================== */}
+      <div className="flex items-center gap-3 mb-3 shrink-0">
+        <div
+          className="
+            w-8 h-8 rounded-full bg-blue-600
+            text-white flex items-center justify-center
+            font-bold
+          "
+        >
+          8
+        </div>
+
+        <h2 className="text-2xl font-extrabold text-slate-900">
+          🔌 How a Circuit Works
+        </h2>
       </div>
 
-      <div className="flex-1 min-h-0 flex flex-col justify-center gap-5">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4 text-center">
-            <div className="text-4xl">🔋</div>
-            <h3 className="font-extrabold mt-2">Battery</h3>
-            <p className="text-xs text-slate-600 mt-1">Provides electrical energy.</p>
+
+      {/* =====================================================
+          CIRCUIT WORKING IMAGE
+      ===================================================== */}
+      <div
+        className="
+          w-full
+          h-[230px]
+          bg-white
+          rounded-2xl
+          border-2
+          border-blue-100
+          shadow-sm
+          overflow-hidden
+          flex
+          items-center
+          justify-center
+          shrink-0
+          mb-4
+        "
+      >
+        <img
+          src="/images/Circuit%20working.webp"
+          alt="Circuit working"
+          className="
+            w-full
+            h-full
+            object-contain
+            object-center
+          "
+        />
+      </div>
+
+
+      {/* =====================================================
+          COMPONENT DETAILS
+      ===================================================== */}
+      <div className="flex-1 min-h-0 grid grid-cols-2 gap-3">
+
+        {/* BATTERY */}
+        <div
+          className="
+            rounded-2xl
+            bg-blue-50
+            border
+            border-blue-100
+            p-4
+            flex
+            items-center
+            gap-3
+          "
+        >
+          <div className="text-4xl shrink-0">
+            🔋
           </div>
-          <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 text-center">
-            <div className="text-4xl">〰️</div>
-            <h3 className="font-extrabold mt-2">Wires</h3>
-            <p className="text-xs text-slate-600 mt-1">Provide a path for current.</p>
-          </div>
-          <div className="rounded-2xl bg-amber-50 border border-amber-100 p-4 text-center">
-            <div className="text-4xl">🔘</div>
-            <h3 className="font-extrabold mt-2">Switch</h3>
-            <p className="text-xs text-slate-600 mt-1">Opens or closes the path.</p>
-          </div>
-          <div className="rounded-2xl bg-yellow-50 border border-yellow-100 p-4 text-center">
-            <div className="text-4xl">💡</div>
-            <h3 className="font-extrabold mt-2">Bulb / LED</h3>
-            <p className="text-xs text-slate-600 mt-1">Uses electrical energy and produces light.</p>
+
+          <div>
+            <h3 className="font-extrabold text-slate-900">
+              Battery
+            </h3>
+
+            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+              Provides electrical energy.
+            </p>
           </div>
         </div>
 
-        <div className="rounded-2xl border-2 border-blue-200 bg-slate-50 p-5 text-center">
-          <div className="text-xl font-extrabold text-blue-700">🔋 → 〰️ → 🔘 → 〰️ → 💡</div>
-          <p className="text-sm text-slate-600 font-medium mt-2">Together, the components form a complete circuit.</p>
+
+        {/* WIRES */}
+        <div
+          className="
+            rounded-2xl
+            bg-slate-100
+            border
+            border-slate-200
+            p-4
+            flex
+            items-center
+            gap-3
+          "
+        >
+          <div className="text-4xl shrink-0">
+            〰️
+          </div>
+
+          <div>
+            <h3 className="font-extrabold text-slate-900">
+              Wires
+            </h3>
+
+            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+              Provide a path for current.
+            </p>
+          </div>
         </div>
+
+
+        {/* SWITCH */}
+        <div
+          className="
+            rounded-2xl
+            bg-amber-50
+            border
+            border-amber-100
+            p-4
+            flex
+            items-center
+            gap-3
+          "
+        >
+          <div className="text-4xl shrink-0">
+            🔘
+          </div>
+
+          <div>
+            <h3 className="font-extrabold text-slate-900">
+              Switch
+            </h3>
+
+            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+              Opens or closes the path.
+            </p>
+          </div>
+        </div>
+
+
+        {/* BULB / LED */}
+        <div
+          className="
+            rounded-2xl
+            bg-yellow-50
+            border
+            border-yellow-100
+            p-4
+            flex
+            items-center
+            gap-3
+          "
+        >
+          <div className="text-4xl shrink-0">
+            💡
+          </div>
+
+          <div>
+            <h3 className="font-extrabold text-slate-900">
+              Bulb / LED
+            </h3>
+
+            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+              Uses electrical energy and produces light.
+            </p>
+          </div>
+        </div>
+
       </div>
+
+
+      {/* =====================================================
+          KEY IDEA
+      ===================================================== */}
+      <div
+        className="
+          mt-3
+          rounded-2xl
+          bg-blue-50
+          border
+          border-blue-100
+          px-4
+          py-3
+          text-center
+          shrink-0
+        "
+      >
+        <span className="font-extrabold text-blue-700">
+          ⚡ Key idea:
+        </span>{" "}
+
+        <span className="font-medium text-slate-700">
+          Together, the components form a complete circuit.
+        </span>
+      </div>
+
     </div>
   );
 }
@@ -2993,7 +5262,7 @@ function Page8HowCircuitWorks() {
 /* =========================================================
    NEW PAGE 9 - HOW TO FORM A SIMPLE CIRCUIT
 ========================================================= */
-function Page9SimpleCircuit() {
+function Page9HowToFormASimpleCircuit() {
   const steps = [
     ['1', '🔋', 'Take a battery.', 'The battery provides electrical energy.'],
     ['2', '🔌', 'Connect one wire from the battery to the bulb.', 'This starts the path.'],
@@ -3028,7 +5297,7 @@ function Page9SimpleCircuit() {
 /* =========================================================
    NEW PAGE 10 - CIRCUIT BUILDER
 ========================================================= */
-function Page10CircuitBuilder() {
+function Page10FormACircuitCircuitBuilder() {
   return (
     <div className="h-full flex flex-col p-7 bg-slate-50 overflow-hidden">
       <div className="flex items-center gap-3 mb-3 shrink-0">
@@ -3046,13 +5315,10 @@ function Page10CircuitBuilder() {
 }
 
 /* =========================================================
-   NEW PAGE 11 - COMPONENTS
-========================================================= */
-/* =========================================================
-   PAGE 11 - COMPONENTS
+   PAGE 11 - EXPLORING ELECTRONIC COMPONENTS
 ========================================================= */
 
-function Page11Components({
+function Page11ExploringElectronicComponents({
   onSelectComponent,
 }: {
   onSelectComponent: (component: ComponentType) => void;
@@ -3116,9 +5382,24 @@ function Page11Components({
   return (
     <div className="h-full w-full flex flex-col p-6 bg-slate-50 overflow-hidden">
 
-      {/* HEADER */}
+      {/* ================= HEADER ================= */}
+
       <div className="flex items-center gap-3 mb-4 shrink-0">
-        <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
+
+        <div
+          className="
+            w-9 h-9
+            rounded-full
+            bg-blue-600
+            text-white
+            flex
+            items-center
+            justify-center
+            font-bold
+            text-sm
+            shrink-0
+          "
+        >
           11
         </div>
 
@@ -3131,12 +5412,16 @@ function Page11Components({
             Click on any component to learn how it works!
           </p>
         </div>
+
       </div>
 
-      {/* COMPONENT GRID */}
+
+      {/* ================= COMPONENT GRID ================= */}
+
       <div className="flex-1 min-h-0 grid grid-cols-4 grid-rows-2 gap-3">
 
         {components.map((component) => (
+
           <button
             key={component.type}
             type="button"
@@ -3164,8 +5449,20 @@ function Page11Components({
             "
           >
 
-            {/* COMPONENT IMAGE */}
-            <div className="w-full h-[105px] flex items-center justify-center mb-2 shrink-0">
+            {/* ================= IMAGE ================= */}
+
+            <div
+              className="
+                w-full
+                h-[105px]
+                flex
+                items-center
+                justify-center
+                mb-2
+                shrink-0
+              "
+            >
+
               <img
                 src={component.image}
                 alt={component.name}
@@ -3180,31 +5477,68 @@ function Page11Components({
                   group-hover:scale-110
                 "
               />
+
             </div>
 
-            {/* COMPONENT NAME */}
-            <div className="text-sm font-extrabold text-slate-900 leading-tight">
+
+            {/* ================= NAME ================= */}
+
+            <div
+              className="
+                text-sm
+                font-extrabold
+                text-slate-900
+                leading-tight
+              "
+            >
               {component.name}
             </div>
 
-            {/* DESCRIPTION */}
-            <div className="text-[10px] text-slate-500 font-medium mt-1 leading-tight">
+
+            {/* ================= DESCRIPTION ================= */}
+
+            <div
+              className="
+                text-[10px]
+                text-slate-500
+                font-medium
+                mt-1
+                leading-tight
+              "
+            >
               {component.short}
             </div>
 
-            {/* BUTTON TEXT */}
-            <div className="mt-2 text-[10px] font-bold text-blue-600 group-hover:text-blue-700">
+
+            {/* ================= VIEW WORKING ================= */}
+
+            <div
+              className="
+                mt-2
+                text-[10px]
+                font-bold
+                text-blue-600
+                group-hover:text-blue-700
+                transition-colors
+              "
+            >
               ▶ View working
             </div>
 
           </button>
+
         ))}
 
       </div>
+
     </div>
   );
 }
-function Page12componentFlowVideo({
+/* =========================================================
+   PAGE 12 - COMPONENT WORKING METHOD
+========================================================= */
+
+function Page12ComponentWorkingMethod({
   selectedComponent,
 }: {
   selectedComponent: ComponentType;
@@ -3317,7 +5651,7 @@ function Page12componentFlowVideo({
   return (
     <div className="h-full w-full flex flex-col p-6 bg-slate-50 overflow-hidden">
 
-      {/* ================= HEADER ================= */}
+      {/* HEADER */}
 
       <div className="flex items-center gap-3 mb-3 shrink-0">
 
@@ -3351,10 +5685,7 @@ function Page12componentFlowVideo({
       </div>
 
 
-      {/* =====================================================
-          GIF FRAME
-          GIF IS FITTED INSIDE THE WHITE FRAME
-      ====================================================== */}
+      {/* GIF FRAME */}
 
       <div
         className="
@@ -3406,7 +5737,7 @@ function Page12componentFlowVideo({
       </div>
 
 
-      {/* ================= COMPONENT NAME ================= */}
+      {/* COMPONENT NAME */}
 
       <div className="shrink-0 text-center mt-3 mb-3">
 
@@ -3417,7 +5748,7 @@ function Page12componentFlowVideo({
       </div>
 
 
-      {/* ================= CONTENT ================= */}
+      {/* CONTENT */}
 
       <div className="flex-1 min-h-0 grid grid-cols-2 gap-3">
 
@@ -3501,10 +5832,11 @@ function Page12componentFlowVideo({
     </div>
   );
 }
+
 /* =========================================================
    NEW PAGE 13 - RECAP
 ========================================================= */
-function Page13Recap() {
+function Page13FinalRecap() {
   return (
     <div className="h-full flex flex-col p-8 bg-white overflow-hidden">
       <div className="flex items-center gap-3 mb-5">
@@ -3523,429 +5855,14 @@ function Page13Recap() {
 }
 
 /* =========================================================
-   QUIZ PAGE ALIASES — KEEP EXISTING QUIZ CONTENT
-========================================================= */
-function Page14QuizOne() {
-  return <Page8Workbook />;
-}
-
-function Page15QuizTwo() {
-  return <Page9Workbook />;
-}
-
-function Page6CircuitTheory() {
-
-  return (
-
-    <div
-      className="
-        h-full
-        flex
-        flex-col
-        p-7
-        bg-white
-        overflow-hidden
-      "
-    >
-
-
-      {/* HEADER */}
-
-      <div
-        className="
-          flex
-          items-center
-          gap-3
-          mb-3
-          shrink-0
-        "
-      >
-
-        <div
-          className="
-            w-8
-            h-8
-            rounded-full
-            bg-blue-600
-            text-white
-            flex
-            items-center
-            justify-center
-            font-bold
-          "
-        >
-          6
-        </div>
-
-        <h2
-          className="
-            text-2xl
-            font-extrabold
-            text-slate-900
-          "
-        >
-          How a Circuit Works
-        </h2>
-
-      </div>
-
-
-      {/* MAIN FRAME */}
-
-      <div
-        className="
-          flex-1
-          min-h-0
-          rounded-2xl
-          border-2
-          border-slate-200
-          bg-slate-50
-          p-4
-          flex
-          flex-col
-        "
-      >
-
-
-        {/* CIRCUIT IMAGE */}
-
-        <div
-          className="
-            w-full
-            h-[150px]
-            rounded-xl
-            bg-white
-            border
-            border-slate-200
-            overflow-hidden
-            shrink-0
-          "
-        >
-
-          <img
-            src="/images/circuit_anim_v9.webp"
-            alt="Simple closed circuit"
-            className="
-              w-full
-              h-full
-              object-contain
-            "
-          />
-
-        </div>
-
-
-        {/* EXPLANATION */}
-
-        <div
-          className="
-            mt-3
-            grid
-            grid-cols-2
-            gap-2
-          "
-        >
-
-
-          {/* BATTERY */}
-
-          <div
-            className="
-              p-2.5
-              rounded-lg
-              bg-blue-50
-              border
-              border-blue-100
-            "
-          >
-
-            <h4
-              className="
-                font-extrabold
-                text-blue-900
-                text-sm
-              "
-            >
-              🔋 Battery
-            </h4>
-
-            <p
-              className="
-                text-blue-800
-                text-xs
-                mt-1
-              "
-            >
-              Electrons leave the
-              <b> Negative (−) </b>
-              terminal.
-            </p>
-
-          </div>
-
-
-          {/* SWITCH */}
-
-          <div
-            className="
-              p-2.5
-              rounded-lg
-              bg-indigo-50
-              border
-              border-indigo-100
-            "
-          >
-
-            <h4
-              className="
-                font-extrabold
-                text-indigo-900
-                text-sm
-              "
-            >
-              🔘 Switch
-            </h4>
-
-            <p
-              className="
-                text-indigo-800
-                text-xs
-                mt-1
-              "
-            >
-              The switch opens or closes the circuit.
-            </p>
-
-          </div>
-
-
-          {/* BULB */}
-
-          <div
-            className="
-              p-2.5
-              rounded-lg
-              bg-amber-50
-              border
-              border-amber-100
-            "
-          >
-
-            <h4
-              className="
-                font-extrabold
-                text-amber-900
-                text-sm
-              "
-            >
-              💡 Bulb
-            </h4>
-
-            <p
-              className="
-                text-amber-800
-                text-xs
-                mt-1
-              "
-            >
-              Electrons flow through the bulb and it glows.
-            </p>
-
-          </div>
-
-
-          {/* POSITIVE */}
-
-          <div
-            className="
-              p-2.5
-              rounded-lg
-              bg-emerald-50
-              border
-              border-emerald-100
-            "
-          >
-
-            <h4
-              className="
-                font-extrabold
-                text-emerald-900
-                text-sm
-              "
-            >
-              🔋 Positive (+)
-            </h4>
-
-            <p
-              className="
-                text-emerald-800
-                text-xs
-                mt-1
-              "
-            >
-              Electrons return to the Positive (+) terminal.
-            </p>
-
-          </div>
-
-        </div>
-
-
-        {/* FLOW */}
-
-        <div
-          className="
-            mt-3
-            p-2.5
-            rounded-lg
-            bg-white
-            border
-            border-slate-200
-            text-center
-          "
-        >
-
-          <p
-            className="
-              text-sm
-              font-extrabold
-              text-slate-700
-            "
-          >
-            🔋 Negative (−)
-            → 🔘 Switch
-            → 💡 Bulb
-            → 🔋 Positive (+)
-          </p>
-
-        </div>
-
-
-        {/* KEY IDEA */}
-
-        <div
-          className="
-            mt-2
-            p-2.5
-            rounded-lg
-            bg-blue-600
-            text-white
-            text-center
-          "
-        >
-
-          <p
-            className="
-              text-xs
-              font-bold
-            "
-          >
-            ⚡ Closed circuit = electrons can flow
-          </p>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  );
-}
-
-
-/* =========================================================
    PAGE 7
 ========================================================= */
-
-function Page7CircuitSim() {
-
-  return (
-
-    <div
-      className="
-        h-full
-        flex
-        flex-col
-        p-7
-        bg-slate-50
-      "
-    >
-
-      <div
-        className="
-          flex
-          items-center
-          gap-3
-          mb-3
-          shrink-0
-        "
-      >
-
-        <div
-          className="
-            w-8
-            h-8
-            rounded-full
-            bg-blue-600
-            text-white
-            flex
-            items-center
-            justify-center
-            font-bold
-          "
-        >
-          7
-        </div>
-
-
-        <div>
-
-          <h2
-            className="
-              text-3xl
-              font-extrabold
-              text-slate-900
-            "
-          >
-            Form a Circuit
-          </h2>
-
-          <p
-            className="
-              text-slate-500
-              text-xs
-              font-medium
-              mt-1
-            "
-          >
-            Drag and drop the components to connect the battery to the LED!
-          </p>
-
-        </div>
-
-      </div>
-
-
-      <div
-        className="
-          flex-1
-          min-h-0
-        "
-      >
-        <CircuitBuilder />
-      </div>
-
-    </div>
-
-  );
-}
-
 
 /* =========================================================
    PAGE 8
 ========================================================= */
 
-function Page8Workbook() {
+function Page14QuickQuizOne() {
   const [answers, setAnswers] = useState<{
     q1: string | null;
     q2: string | null;
@@ -4779,7 +6696,7 @@ function Page8Workbook() {
   );
 }
 
-function Page9Workbook() {
+function Page15QuickQuizTwo() {
   const [answers, setAnswers] = useState<{
     q4: string | null;
     q5: string | null;
@@ -4823,7 +6740,7 @@ function Page9Workbook() {
       {/* HEADER */}
       <div className="flex items-center gap-3 mb-3 shrink-0">
         <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
-          9
+          15
         </div>
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900 leading-none">
@@ -4957,62 +6874,4 @@ function Page9Workbook() {
   );
 }
 
-
-function Page10ElectronicsCover() {
-  return (
-    <div className="h-full w-full relative overflow-hidden bg-gradient-to-br from-blue-950 via-indigo-900 to-slate-950 flex items-center justify-center">
-
-      {/* BACKGROUND GLOW */}
-      <div className="absolute w-[420px] h-[420px] rounded-full bg-cyan-400/20 blur-[100px]" />
-      <div className="absolute -top-20 -right-20 w-[260px] h-[260px] rounded-full bg-blue-400/20 blur-[80px]" />
-      <div className="absolute -bottom-20 -left-20 w-[280px] h-[280px] rounded-full bg-indigo-400/20 blur-[80px]" />
-
-      {/* CIRCUIT LINES */}
-      <div className="absolute top-[18%] left-0 w-[30%] h-px bg-cyan-300/50" />
-      <div className="absolute top-[18%] right-0 w-[30%] h-px bg-cyan-300/50" />
-      <div className="absolute bottom-[18%] left-0 w-[25%] h-px bg-blue-300/40" />
-      <div className="absolute bottom-[18%] right-0 w-[25%] h-px bg-blue-300/40" />
-
-      {/* COVER */}
-      <div className="relative z-10 w-[84%] h-[84%] rounded-3xl border border-cyan-300/30 bg-white/10 backdrop-blur-md shadow-[0_25px_80px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center text-center px-8">
-
-        <div className="w-24 h-24 rounded-full bg-white/15 border-2 border-cyan-300/40 flex items-center justify-center text-5xl shadow-[0_0_45px_rgba(34,211,238,0.35)] animate-pulse mb-7">
-          ⚡
-        </div>
-
-        <p className="text-cyan-200 text-xs font-extrabold uppercase tracking-[0.35em] mb-4">
-          Next Chapter
-        </p>
-
-        <h1 className="text-5xl font-black text-white leading-tight">
-          Electronics
-        </h1>
-
-        <div className="mt-4 w-20 h-1 rounded-full bg-cyan-400" />
-
-        <p className="mt-5 text-blue-100 text-sm font-semibold max-w-[380px] leading-relaxed">
-          Explore electronic components, circuits, current, voltage and how electronic devices work together.
-        </p>
-
-        <div className="mt-8 flex items-center gap-5">
-          <div className="w-14 h-14 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-3xl">
-            🔋
-          </div>
-          <span className="text-cyan-300 text-2xl">→</span>
-          <div className="w-14 h-14 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-3xl">
-            🔘
-          </div>
-          <span className="text-cyan-300 text-2xl">→</span>
-          <div className="w-14 h-14 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-3xl">
-            💡
-          </div>
-        </div>
-
-        <p className="absolute bottom-6 text-white/50 text-[9px] font-bold uppercase tracking-[0.25em]">
-          MEG-Zcuit • Interactive Electronics
-        </p>
-      </div>
-    </div>
-  );
-}
 
